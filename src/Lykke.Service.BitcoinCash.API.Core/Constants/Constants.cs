@@ -6,7 +6,7 @@
         {
             public static class BitcoinCash
             {
-                public const string AssetId = "BCC";
+                public const string AssetId = "BCH";
                 public const int Accuracy = 8;
                 public const string Name = "BitcoinCash";
                 public const string Address = "";
