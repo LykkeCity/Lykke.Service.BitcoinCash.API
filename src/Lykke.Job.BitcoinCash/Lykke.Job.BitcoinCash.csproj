@@ -12,13 +12,7 @@
     <Compile Remove="IncomingMessages\**" />
     <EmbeddedResource Remove="IncomingMessages\**" />
     <None Remove="IncomingMessages\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  </ItemGroup>  
 
   <ItemGroup>
     <None Update="Dockerfile">
