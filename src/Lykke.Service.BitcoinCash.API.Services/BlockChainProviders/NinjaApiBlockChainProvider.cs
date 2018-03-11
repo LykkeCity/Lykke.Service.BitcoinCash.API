@@ -31,7 +31,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders
         public async Task<int> GetTxConfirmationCount(string txHash)
         {
             var tx = await _ninjaClient.GetTransaction(uint256.Parse(txHash));
-            return tx.Block.Confirmations;
+            return tx?.Block?.Confirmations ?? 0;
         }
 
         public async Task<IEnumerable<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
