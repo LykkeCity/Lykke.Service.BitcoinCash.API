@@ -25,7 +25,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders
         {
             var response = await _ninjaClient.Broadcast(tx);
             if (!response.Success || response.Error?.ErrorCode == NBitcoin.Protocol.RejectCode.INVALID)
-                throw new BusinessException(response.Error?.Reason, ErrorCode.BroadcastError);                
+                throw new BusinessException(response.Error?.Reason, ErrorCode.BroadcastError);
         }
 
         public async Task<int> GetTxConfirmationCount(string txHash)
@@ -37,7 +37,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders
         public async Task<IEnumerable<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
         {
             var response = await _ninjaClient.GetBalance(_addressValidator.GetBitcoinAddress(address), true);
-            return response.Operations.Where(o => o.Confirmations > minConfirmationCount).SelectMany(o => o.ReceivedCoins).OfType<Coin>();
+            return response.Operations.Where(o => o.Confirmations >= minConfirmationCount).SelectMany(o => o.ReceivedCoins).OfType<Coin>();
         }
 
 
