@@ -36,12 +36,12 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
                 PartitionKey = GeneratePartitionKey(source.OperationId),
                 RowKey = GenerateRowKey(source.Type),
                 Context = source.Context
-               
+
             };
         }
     }
 
-    public class OperationEventRepository: IOperationEventRepository
+    public class OperationEventRepository : IOperationEventRepository
     {
         private readonly INoSQLTableStorage<OperationEventTableEntity> _storage;
 
@@ -52,8 +52,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
 
         public async Task InsertIfNotExist(IOperationEvent operationEvent)
         {
-            if (!await Exist(operationEvent.OperationId, operationEvent.Type))
-                await _storage.InsertAsync(OperationEventTableEntity.Create(operationEvent));
+            await _storage.CreateIfNotExistsAsync(OperationEventTableEntity.Create(operationEvent));
         }
 
         public async Task<bool> Exist(Guid operationId, OperationEventType type)
