@@ -24,8 +24,8 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders
         public async Task BroadCastTransaction(Transaction tx)
         {
             var response = await _ninjaClient.Broadcast(tx);
-            if (!response.Success)
-                throw new BusinessException(response.Error.Reason, ErrorCode.BroadcastError);                
+            if (!response.Success || response.Error?.ErrorCode == NBitcoin.Protocol.RejectCode.INVALID)
+                throw new BusinessException(response.Error?.Reason, ErrorCode.BroadcastError);                
         }
 
         public async Task<int> GetTxConfirmationCount(string txHash)
