@@ -11,8 +11,8 @@ namespace Lykke.Service.BitcoinCash.API.Core.Transactions
 
     public interface ITransactionBlobStorage
     {
-        Task<string> GetTransaction(Guid operationId, TransactionBlobType type);
+        Task<string> GetTransaction(Guid operationId, string hash, TransactionBlobType type);
 
-        Task AddOrReplaceTransaction(Guid operationId, TransactionBlobType type, string transactionHex);
+        Task AddOrReplaceTransaction(Guid operationId, string hash, TransactionBlobType type, string transactionHex);
     }
 }

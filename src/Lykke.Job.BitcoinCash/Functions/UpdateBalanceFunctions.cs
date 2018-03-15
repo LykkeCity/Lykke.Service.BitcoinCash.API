@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Common;
@@ -24,19 +25,23 @@ namespace Lykke.Job.BitcoinCash.Functions
         [TimerTrigger("00:10:00")]
         public async Task UpdateBalances()
         {
-            var wallets = (await _observableWalletRepository.GetAll()).ToList();
-
-            foreach (var observableWallet in wallets)
+            string continuation = null;
+            do
             {
-                try
+                IEnumerable<IObservableWallet> wallets;
+                (wallets, continuation) = (await _observableWalletRepository.GetAll(1000, continuation));
+                foreach (var observableWallet in wallets)
                 {
-                    await _walletBalanceService.UpdateBalance(observableWallet);
+                    try
+                    {
+                        await _walletBalanceService.UpdateBalance(observableWallet);
+                    }
+                    catch (Exception e)
+                    {
+                        await _log.WriteErrorAsync(nameof(UpdateBalanceFunctions), nameof(UpdateBalances), observableWallet.ToJson(), e);
+                    }
                 }
-                catch (Exception e)
-                {
-                    await _log.WriteErrorAsync(nameof(UpdateBalanceFunctions), nameof(UpdateBalances), observableWallet.ToJson(), e);
-                }
-            }
+            } while (continuation != null);
         }
     }
 }

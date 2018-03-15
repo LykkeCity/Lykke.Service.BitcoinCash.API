@@ -16,7 +16,7 @@ using Lykke.SettingsReader;
 
 namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Binder
 {
-    public  class RepositoryModule:Module
+    public class RepositoryModule : Module
     {
         private readonly ILog _log;
         private readonly IReloadingManager<BitcoinCashApiSettings> _settings;
