@@ -8,10 +8,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="6.1.0" />
-    <PackageReference Include="Lykke.Common" Version="4.5.0" />
+    <PackageReference Include="Lykke.Common" Version="5.1.0" />
     <PackageReference Include="Lykke.SettingsReader" Version="2.1.0" />
-    <PackageReference Include="morelinq" Version="2.9.0" />
+    <PackageReference Include="morelinq" Version="2.10.0" />
     <PackageReference Include="QBitNinja.Client" Version="1.0.3.46" />
   </ItemGroup>
 

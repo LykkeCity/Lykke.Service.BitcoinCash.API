@@ -23,7 +23,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
             {
                 try
                 {
-                    return new BitcoinColoredAddress(base58data)?.Address;
+                    return new BitcoinColoredAddress(base58data).Address;
                 }
                 catch (Exception)
                 {

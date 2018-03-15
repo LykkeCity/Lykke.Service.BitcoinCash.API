@@ -6,7 +6,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Operation
     public interface IOperationMeta
     {
         Guid OperationId { get; }
-
+        string Hash { get; }
         string FromAddress { get; }
 
         string ToAddress { get; }
@@ -23,6 +23,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Operation
     public class OperationMeta : IOperationMeta
     {
         public Guid OperationId { get; set; }
+        public string Hash { get; set; }
         public string FromAddress { get; set; }
         public string ToAddress { get; set; }
         public string AssetId { get; set; }
@@ -31,11 +32,12 @@ namespace Lykke.Service.BitcoinCash.API.Core.Operation
         public bool IncludeFee { get; set; }
         public DateTime Inserted { get; set; }
 
-        public static OperationMeta Create(Guid operationId, string fromAddress, string toAddress, string assetId,
+        public static OperationMeta Create(Guid operationId, string hash, string fromAddress, string toAddress, string assetId,
             long amountSatoshi, long feeSatoshi, bool includeFee, DateTime? inserted = null)
         {
             return new OperationMeta
             {
+                Hash = hash,
                 AmountSatoshi = amountSatoshi,
                 AssetId = assetId,
                 FromAddress = fromAddress,
@@ -50,7 +52,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Operation
 
     public interface IOperationMetaRepository
     {
-        Task Insert(IOperationMeta meta);
+        Task<bool> TryInsert(IOperationMeta meta);
 
         Task<IOperationMeta> Get(Guid id);
 

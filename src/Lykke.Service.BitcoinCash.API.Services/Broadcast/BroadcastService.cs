@@ -50,22 +50,18 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
             {
                 throw new BusinessException("Transaction already brodcasted", ErrorCode.TransactionAlreadyBroadcasted);
             }
-
-            await _transactionBlobStorage.AddOrReplaceTransaction(operationId, TransactionBlobType.BeforeBroadcast, tx.ToHex());
+            var hash = tx.GetHash().ToString();
+            await _transactionBlobStorage.AddOrReplaceTransaction(operationId, hash, TransactionBlobType.BeforeBroadcast, tx.ToHex());
 
             var lastBlockHeight = await _blockChainProvider.GetLastBlockHeight();
 
             await _blockChainProvider.BroadCastTransaction(tx);
 
+            await _observableOperationRepository.InsertOrReplace(ObervableOperation.Create(operation, BroadcastStatus.InProgress, hash, lastBlockHeight));
+
+            await _unconfirmedTransactionRepository.InsertOrReplace(UnconfirmedTransaction.Create(operationId, hash));
+
             await _operationEventRepository.InsertIfNotExist(OperationEvent.Create(operationId, OperationEventType.Broadcasted));
-
-            await _observableOperationRepository.InsertOrReplace(ObervableOperation.Create(operation,
-                BroadcastStatus.InProgress,
-                tx.GetHash().ToString(),
-                lastBlockHeight));
-
-            await _unconfirmedTransactionRepository.InsertOrReplace(
-                UnconfirmedTransaction.Create(operationId, tx.GetHash().ToString()));
         }
 
         public async Task BroadCastTransaction(Guid operationId, string txHex)

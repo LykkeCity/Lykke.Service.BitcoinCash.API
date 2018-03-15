@@ -34,12 +34,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
             Money amountToSend,
             bool includeFee)
         {
-            if (await _operationMetaRepository.Exist(operationId))
-            {
-                var alreadyBuildedTransaction = await _transactionBlobStorage.GetTransaction(operationId, TransactionBlobType.Initial);
-
-                return Serializer.ToObject<BuildedTransactionInfo>(alreadyBuildedTransaction);
-            }
+            var existingOperation = await _operationMetaRepository.Get(operationId);
+            if (existingOperation != null)
+                return await GetExistingTransaction(existingOperation.OperationId, existingOperation.Hash);
 
             var buildedTransaction = await _transactionBuilder.GetTransferTransaction(fromAddress, toAddress, amountToSend, includeFee);
 
@@ -49,16 +46,24 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
                 UsedCoins = buildedTransaction.UsedCoins
             };
 
-            await _transactionBlobStorage.AddOrReplaceTransaction(operationId, TransactionBlobType.Initial,                
-               buildedTransactionInfo.ToJson(_network));
+            var txHash = buildedTransaction.TransactionData.GetHash().ToString();
 
-            var operation = OperationMeta.Create(operationId, fromAddress.ToString(), toAddress.ToString(), assetId,
+            await _transactionBlobStorage.AddOrReplaceTransaction(operationId, txHash, TransactionBlobType.Initial, buildedTransactionInfo.ToJson(_network));
+
+            var operation = OperationMeta.Create(operationId, txHash, fromAddress.ToString(), toAddress.ToString(), assetId,
                 buildedTransaction.Amount.Satoshi, buildedTransaction.Fee.Satoshi, includeFee);
-            await _operationMetaRepository.Insert(operation);
 
+            if (await _operationMetaRepository.TryInsert(operation))
+                return buildedTransactionInfo;
 
+            existingOperation = await _operationMetaRepository.Get(operationId);
+            return await GetExistingTransaction(operationId, existingOperation.Hash);
+        }
 
-            return buildedTransactionInfo;
+        private async Task<BuildedTransactionInfo> GetExistingTransaction(Guid operationId, string hash)
+        {
+            var alreadyBuildedTransaction = await _transactionBlobStorage.GetTransaction(operationId, hash, TransactionBlobType.Initial);
+            return Serializer.ToObject<BuildedTransactionInfo>(alreadyBuildedTransaction);
         }
     }
 }

@@ -49,7 +49,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
         }
 
         private async Task<IBuildedTransaction> TransferOneDirection(TransactionBuilder builder,
-            BitcoinAddress @from, long amount, BitcoinAddress to, bool includeFee)
+            BitcoinAddress from, long amount, BitcoinAddress to, bool includeFee)
         {
             var fromStr = from.ToString();
             var coins = (await _transactionOutputsService.GetUnspentOutputs(fromStr)).ToList();

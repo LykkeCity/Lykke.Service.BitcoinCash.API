@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using AzureStorage;
+using Common;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -9,6 +10,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
     public class OperationMetaEntity : TableEntity, IOperationMeta
     {
         public Guid OperationId { get; set; }
+        public string Hash { get; set; }
         public string FromAddress { get; set; }
         public string ToAddress { get; set; }
         public string AssetId { get; set; }
@@ -23,6 +25,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
             {
                 PartitionKey = partitionKey,
                 RowKey = rowKey,
+                Hash = source.Hash,
                 ToAddress = source.ToAddress,
                 FromAddress = source.FromAddress,
                 AssetId = source.AssetId,
@@ -36,9 +39,9 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
 
         public static class ByOperationId
         {
-            public static string GeneratePartitionKey()
+            public static string GeneratePartitionKey(Guid operationId)
             {
-                return "ByOperationId";
+                return operationId.ToString().CalculateHexHash32(3);
             }
 
             public static string GenerateRowKey(Guid operationId)
@@ -48,7 +51,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
 
             public static OperationMetaEntity Create(IOperationMeta source)
             {
-                return Map(GeneratePartitionKey(), GenerateRowKey(source.OperationId), source);
+                return Map(GeneratePartitionKey(source.OperationId), GenerateRowKey(source.OperationId), source);
             }
         }
     }
@@ -62,14 +65,14 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Operations
             _storage = storage;
         }
 
-        public Task Insert(IOperationMeta meta)
+        public Task<bool> TryInsert(IOperationMeta meta)
         {
-            return _storage.InsertAsync(OperationMetaEntity.ByOperationId.Create(meta));
+            return _storage.TryInsertAsync(OperationMetaEntity.ByOperationId.Create(meta));
         }
 
         public async Task<IOperationMeta> Get(Guid id)
         {
-            return await _storage.GetDataAsync(OperationMetaEntity.ByOperationId.GeneratePartitionKey(),
+            return await _storage.GetDataAsync(OperationMetaEntity.ByOperationId.GeneratePartitionKey(id),
                 OperationMetaEntity.ByOperationId.GenerateRowKey(id));
         }
 

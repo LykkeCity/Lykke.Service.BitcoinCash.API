@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using AzureStorage;
+using Common;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
 using Microsoft.WindowsAzure.Storage;
@@ -12,9 +13,9 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
     {
         public string Address { get; set; }
 
-        public static string GeneratePartitionKey()
+        public static string GeneratePartitionKey(string address)
         {
-            return "ByAddress";
+            return address.CalculateHexHash32(3);
         }
 
         public static string GenerateRowKey(string address)
@@ -27,12 +28,12 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
             return new ObservableWalletEntity
             {
                 Address = source.Address,
-                PartitionKey = GeneratePartitionKey(),
+                PartitionKey = GeneratePartitionKey(source.Address),
                 RowKey = GenerateRowKey(source.Address)
             };
         }
     }
-    public class ObservableWalletRepository: IObservableWalletRepository
+    public class ObservableWalletRepository : IObservableWalletRepository
     {
         private readonly INoSQLTableStorage<ObservableWalletEntity> _storage;
         private const int EntityExistsHttpStatusCode = 409;
@@ -45,37 +46,24 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
 
         public async Task Insert(IObservableWallet wallet)
         {
-            try
-            {
-                await _storage.InsertAsync(ObservableWalletEntity.Create(wallet));
-            }
-            catch (StorageException e) when(e.RequestInformation.HttpStatusCode == EntityExistsHttpStatusCode)
-            {
+            if (!await _storage.TryInsertAsync(ObservableWalletEntity.Create(wallet)))
                 throw new BusinessException($"Wallet {wallet.Address} already exist", ErrorCode.EntityAlreadyExist);
-            }
         }
 
-        public async Task<IEnumerable<IObservableWallet>> GetAll()
+        public async Task<(IEnumerable<IObservableWallet>, string ContinuationToken)> GetAll(int take, string continuationToken)
         {
-            return await _storage.GetDataAsync(ObservableWalletEntity.GeneratePartitionKey());
+            return await _storage.GetDataWithContinuationTokenAsync(take, continuationToken);
         }
 
         public async Task Delete(string address)
         {
-            try
-            {
-                await _storage.DeleteAsync(ObservableWalletEntity.GeneratePartitionKey(),
-                    ObservableWalletEntity.GenerateRowKey(address));
-            }
-            catch (StorageException e) when (e.RequestInformation.HttpStatusCode == EntityNotExistsHttpStatusCode)
-            {
+            if (!await _storage.DeleteIfExistAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey(address)))
                 throw new BusinessException($"Wallet {address} not exist", ErrorCode.EntityNotExist);
-            }
         }
 
         public async Task<IObservableWallet> Get(string address)
         {
-            return await _storage.GetDataAsync(ObservableWalletEntity.GeneratePartitionKey(), ObservableWalletEntity.GenerateRowKey(address));
+            return await _storage.GetDataAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey(address));
         }
     }
 }

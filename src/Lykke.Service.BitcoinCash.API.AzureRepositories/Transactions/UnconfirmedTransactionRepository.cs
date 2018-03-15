@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using AzureStorage;
+using Common;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using Microsoft.WindowsAzure.Storage.Table;
 
@@ -12,9 +13,9 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Transactions
         public string TxHash { get; set; }
         public Guid OperationId { get; set; }
 
-        public static string GeneratePartitionKey()
+        public static string GeneratePartitionKey(Guid operationId)
         {
-            return "ByOperationId";
+            return operationId.ToString().CalculateHexHash32(3);
         }
 
         public static string GenerateRowKey(Guid operationId)
@@ -26,7 +27,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Transactions
         {
             return new UnconfirmedTransactionEntity
             {
-                PartitionKey = GeneratePartitionKey(),
+                PartitionKey = GeneratePartitionKey(source.OperationId),
                 RowKey = GenerateRowKey(source.OperationId),
                 OperationId = source.OperationId,
                 TxHash = source.TxHash
@@ -45,7 +46,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Transactions
 
         public async Task<IEnumerable<IUnconfirmedTransaction>> GetAll()
         {
-            return await _storage.GetDataAsync(UnconfirmedTransactionEntity.GeneratePartitionKey());
+            return await _storage.GetDataAsync();
         }
 
         public Task InsertOrReplace(IUnconfirmedTransaction tx)
@@ -57,7 +58,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Transactions
         {
             foreach (var operationId in operationIds)
             {
-                await _storage.DeleteIfExistAsync(UnconfirmedTransactionEntity.GeneratePartitionKey(),
+                await _storage.DeleteIfExistAsync(UnconfirmedTransactionEntity.GeneratePartitionKey(operationId),
                     UnconfirmedTransactionEntity.GenerateRowKey(operationId));
             }
         }
