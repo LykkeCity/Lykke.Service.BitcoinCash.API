@@ -34,10 +34,10 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders
             return tx?.Block?.Confirmations ?? 0;
         }
 
-        public async Task<IEnumerable<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
+        public async Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
         {
             var response = await _ninjaClient.GetBalance(_addressValidator.GetBitcoinAddress(address), true);
-            return response.Operations.Where(o => o.Confirmations >= minConfirmationCount).SelectMany(o => o.ReceivedCoins).OfType<Coin>();
+            return response.Operations.Where(o => o.Confirmations >= minConfirmationCount).SelectMany(o => o.ReceivedCoins).OfType<Coin>().ToList();
         }
 
 

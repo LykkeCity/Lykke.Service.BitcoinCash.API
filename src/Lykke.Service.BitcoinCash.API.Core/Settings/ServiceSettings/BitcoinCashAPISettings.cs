@@ -20,5 +20,8 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
         
         [Optional]
         public int MinConfirmationsToDetectOperation { get; set; } = 3;
+
+        [Optional]
+        public double SpentOutputsExpirationDays { get; set; } = 7;
     }
 }

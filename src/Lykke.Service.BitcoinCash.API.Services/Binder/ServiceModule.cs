@@ -92,6 +92,10 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private void RegisterTransactionOutputsServices(ContainerBuilder builder)
         {
+            builder.RegisterInstance(new SpentOutputsSettings()
+            {
+                SpentOutputsExpirationDays = _settings.CurrentValue.SpentOutputsExpirationDays
+            });
             builder.RegisterType<TransactionOutputsService>().As<ITransactionOutputsService>();
         }
 
