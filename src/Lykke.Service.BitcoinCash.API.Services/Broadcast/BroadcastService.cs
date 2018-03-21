@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
@@ -6,6 +7,7 @@ using Lykke.Service.BitcoinCash.API.Core.Broadcast;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
+using Lykke.Service.BitcoinCash.API.Core.TransactionOutputs;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using NBitcoin;
 
@@ -20,6 +22,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
         private readonly IOperationEventRepository _operationEventRepository;
         private readonly IObservableOperationRepository _observableOperationRepository;
         private readonly ITransactionBlobStorage _transactionBlobStorage;
+        private readonly ISpentOutputRepository _spentOutputRepository;
 
         public BroadcastService(IBlockChainProvider blockChainProvider,
             ILog log,
@@ -27,7 +30,8 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
             IOperationMetaRepository operationMetaRepository,
             IOperationEventRepository operationEventRepository,
             IObservableOperationRepository observableOperationRepository,
-            ITransactionBlobStorage transactionBlobStorage)
+            ITransactionBlobStorage transactionBlobStorage,
+            ISpentOutputRepository spentOutputRepository)
         {
             _blockChainProvider = blockChainProvider;
             _log = log;
@@ -36,6 +40,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
             _operationEventRepository = operationEventRepository;
             _observableOperationRepository = observableOperationRepository;
             _transactionBlobStorage = transactionBlobStorage;
+            _spentOutputRepository = spentOutputRepository;
         }
 
         public async Task BroadCastTransaction(Guid operationId, Transaction tx)
@@ -54,7 +59,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
             await _transactionBlobStorage.AddOrReplaceTransaction(operationId, hash, TransactionBlobType.BeforeBroadcast, tx.ToHex());
 
             var lastBlockHeight = await _blockChainProvider.GetLastBlockHeight();
-
+        
             await _blockChainProvider.BroadCastTransaction(tx);
 
             await _observableOperationRepository.InsertOrReplace(ObervableOperation.Create(operation, BroadcastStatus.InProgress, hash, lastBlockHeight));
@@ -62,6 +67,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.Broadcast
             await _unconfirmedTransactionRepository.InsertOrReplace(UnconfirmedTransaction.Create(operationId, hash));
 
             await _operationEventRepository.InsertIfNotExist(OperationEvent.Create(operationId, OperationEventType.Broadcasted));
+
+            await _spentOutputRepository.InsertSpentOutputs(operationId, tx.Inputs.Select(i => new Output(i.PrevOut)));
+
         }
 
         public async Task BroadCastTransaction(Guid operationId, string txHex)

@@ -8,7 +8,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.BlockChainReaders
     {        
         Task BroadCastTransaction(Transaction tx);
         Task<int> GetTxConfirmationCount(string txHash);
-        Task<IEnumerable<Coin>> GetUnspentOutputs(string address, int minConfirmationCount);        
+        Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount);        
         Task<long> GetBalanceSatoshiFromUnspentOutputs(string address, int minConfirmationCount);
         Task<int> GetLastBlockHeight();
     }

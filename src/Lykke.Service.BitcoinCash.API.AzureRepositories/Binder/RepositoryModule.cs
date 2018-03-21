@@ -4,12 +4,14 @@ using AzureStorage.Tables;
 using Common.Log;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Asset;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Operations;
+using Lykke.Service.BitcoinCash.API.AzureRepositories.SpentOutputs;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Transactions;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet;
 using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
 using Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings;
+using Lykke.Service.BitcoinCash.API.Core.TransactionOutputs;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
 using Lykke.SettingsReader;
@@ -67,6 +69,11 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Binder
                     AzureTableStorage<WalletBalanceEntity>.Create(_settings.Nested(p => p.Db.DataConnString),
                         "WalletBalances", _log)))
                 .As<IWalletBalanceRepository>();
+
+            builder.RegisterInstance(new SpentOutputRepository(
+                    AzureTableStorage<SpentOutputEntity>.Create(_settings.Nested(p => p.Db.DataConnString),
+                        "SpentOutputs", _log)))
+                .As<ISpentOutputRepository>();
         }
 
         private void RegisterBlob(ContainerBuilder builder)
