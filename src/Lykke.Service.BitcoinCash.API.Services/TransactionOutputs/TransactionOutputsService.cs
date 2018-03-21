@@ -7,7 +7,7 @@ using NBitcoin;
 
 namespace Lykke.Service.BitcoinCash.API.Services.TransactionOutputs
 {
-    public partial class TransactionOutputsService : ITransactionOutputsService
+    public class TransactionOutputsService : ITransactionOutputsService
     {
         private readonly IBlockChainProvider _blockChainProvider;
         private readonly ISpentOutputRepository _spentOutputRepository;
