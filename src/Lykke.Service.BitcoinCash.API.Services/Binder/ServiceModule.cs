@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using BCashAddr;
 using Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
@@ -21,6 +22,7 @@ using Lykke.Service.BitcoinCash.API.Services.Transactions;
 using Lykke.Service.BitcoinCash.API.Services.Wallet;
 using Lykke.SettingsReader;
 using NBitcoin;
+using NBitcoin.Altcoins;
 
 namespace Lykke.Service.BitcoinCash.API.Services.Binder
 {
@@ -49,6 +51,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private void RegisterNetwork(ContainerBuilder builder)
         {
+            BCash.Instance.EnsureRegistered();                                    
             var network = Network.GetNetwork(_settings.CurrentValue.Network);
             builder.RegisterInstance(network).As<Network>();
         }
