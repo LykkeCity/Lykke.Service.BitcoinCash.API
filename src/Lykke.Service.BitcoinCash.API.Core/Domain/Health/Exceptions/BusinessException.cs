@@ -7,8 +7,8 @@ namespace Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions
         public ErrorCode Code { get; private set; }
         public string Text { get; private set; }
 
-        public BusinessException(string text, ErrorCode code)
-            : base(text)
+        public BusinessException(string text, ErrorCode code, Exception inner = null)
+            : base(text, inner)
         {
             Code = code;
             Text = text;
