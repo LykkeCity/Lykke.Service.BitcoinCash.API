@@ -11,7 +11,7 @@ using Lykke.Service.BitcoinCash.API.Core.TransactionOutputs;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
 using Lykke.Service.BitcoinCash.API.Services.Address;
-using Lykke.Service.BitcoinCash.API.Services.BlockChainProviders;
+using Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi;
 using Lykke.Service.BitcoinCash.API.Services.Broadcast;
 using Lykke.Service.BitcoinCash.API.Services.Fee;
 using Lykke.Service.BitcoinCash.API.Services.ObservableOperation;
@@ -21,7 +21,6 @@ using Lykke.Service.BitcoinCash.API.Services.Transactions;
 using Lykke.Service.BitcoinCash.API.Services.Wallet;
 using Lykke.SettingsReader;
 using NBitcoin;
-using QBitNinja.Client;
 
 namespace Lykke.Service.BitcoinCash.API.Services.Binder
 {
@@ -74,10 +73,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
         }
 
         private void RegisterInsightApiBlockChainReaders(ContainerBuilder builder)
-        {
-            builder.RegisterInstance(new QBitNinjaClient(_settings.CurrentValue.NinjaApiUrl, Network.GetNetwork(_settings.CurrentValue.Network)));
-
-            builder.RegisterType<NinjaApiBlockChainProvider>().As<IBlockChainProvider>();
+        {            
+            builder.RegisterInstance(new InsightApiSettings() {Url = _settings.CurrentValue.InsightApiUrl});
+            builder.RegisterType<InsightApiBlockChainProvider>().As<IBlockChainProvider>();
         }
 
 
