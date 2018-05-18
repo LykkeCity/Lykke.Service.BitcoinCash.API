@@ -103,13 +103,18 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         private async Task<T> GetJson<T>(Url url, int tryCount = 3)
         {
-            bool NeedToRetryException(Exception ex)
+            async Task<bool> NeedToRetryException(Exception ex)
             {
                 if (!(ex is FlurlHttpException flurlException))
                     return false;
 
                 if (flurlException is FlurlHttpTimeoutException)
                     return true;
+
+                if (flurlException.Call.HttpStatus == (HttpStatusCode) 429)
+                {
+                    await Task.Delay(1000);
+                }
 
                 if (flurlException.Call.HttpStatus == HttpStatusCode.ServiceUnavailable ||
                     flurlException.Call.HttpStatus == HttpStatusCode.InternalServerError)
@@ -119,8 +124,8 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
             try
             {
-
-                return await Retry.Try(() => url.GetJsonAsync<T>(), NeedToRetryException, tryCount, _log);
+                await Task.Delay(200);
+                return await Retry.TryWithAsyncFilter(() => url.GetJsonAsync<T>(), NeedToRetryException, tryCount, _log);
             }
             catch (FlurlHttpException e)
             {

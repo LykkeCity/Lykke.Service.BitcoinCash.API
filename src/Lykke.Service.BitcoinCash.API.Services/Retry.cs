@@ -27,6 +27,25 @@ namespace Lykke.Service.BitcoinCash.API.Services
             }
         }
 
+        public static async Task<T> TryWithAsyncFilter<T>(Func<Task<T>> action, Func<Exception, Task<bool>> exceptionFilter, int tryCount, ILog logger)
+        {
+            int @try = 0;
+            while (true)
+            {
+                try
+                {
+                    return await action();
+                }
+                catch (Exception ex)
+                {
+                    @try++;
+                    if (! await exceptionFilter(ex) || @try >= tryCount)
+                        throw;
+                    await logger.WriteErrorAsync("Retry", "Try", null, ex);
+                }
+            }
+        }
+
         public static async Task Try(Func<Task> action, Func<Exception, bool> exceptionFilter, int tryCount, ILog logger)
         {
             int @try = 0;
