@@ -1,9 +1,11 @@
 ﻿using Autofac;
+using Autofac.Features.AttributeFilters;
 using BCashAddr;
 using Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Broadcast;
+using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Fee;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
@@ -47,13 +49,20 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
             RegisterTransactionBuilderServices(builder);
             RegisterBroadcastServices(builder);
             RegisterObservableServices(builder);
+            RegisterHistoryServices(builder);
         }
 
         private void RegisterNetwork(ContainerBuilder builder)
         {
-            BCash.Instance.EnsureRegistered();                                    
+            BCash.Instance.EnsureRegistered();
             var network = Network.GetNetwork(_settings.CurrentValue.Network);
             builder.RegisterInstance(network).As<Network>();
+
+            var bcashNetwork = BCash.Instance.Testnet;
+            if (network == Network.Main)
+                bcashNetwork = BCash.Instance.Mainnet;
+
+            builder.RegisterInstance(bcashNetwork).Keyed<Network>(Constants.BCashFilter);
         }
 
         private void RegisterFeeServices(ContainerBuilder builder)
@@ -72,12 +81,12 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private void RegisterAddressValidatorServices(ContainerBuilder builder)
         {
-            builder.RegisterType<AddressValidator>().As<IAddressValidator>();
+            builder.RegisterType<AddressValidator>().As<IAddressValidator>().WithAttributeFiltering();
         }
 
         private void RegisterInsightApiBlockChainReaders(ContainerBuilder builder)
-        {            
-            builder.RegisterInstance(new InsightApiSettings() {Url = _settings.CurrentValue.InsightApiUrl});
+        {
+            builder.RegisterInstance(new InsightApiSettings() { Url = _settings.CurrentValue.InsightApiUrl });
             builder.RegisterType<InsightApiBlockChainProvider>().As<IBlockChainProvider>();
         }
 
@@ -115,6 +124,11 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
         {
             builder.RegisterType<ObservableOperationService>().As<IObservableOperationService>();
             builder.RegisterType<WalletBalanceService>().As<IWalletBalanceService>();
+        }
+
+        private void RegisterHistoryServices(ContainerBuilder builder)
+        {
+            builder.RegisterType<HistoryService>().As<IHistoryService>();
         }
     }
 }

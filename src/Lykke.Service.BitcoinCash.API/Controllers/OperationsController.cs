@@ -94,8 +94,8 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
 
         [HttpPost("api/transactions/broadcast")]
         [SwaggerOperation(nameof(BroadcastTransaction))]
-        [ProducesResponseType((int) HttpStatusCode.OK)]
-        [ProducesResponseType((int) HttpStatusCode.NoContent)]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.NoContent)]
         [ProducesResponseType(400)]
         [ProducesResponseType(409)]
         public async Task<IActionResult> BroadcastTransaction([FromBody] BroadcastTransactionRequest request)
@@ -115,7 +115,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             }
             catch (BusinessException e) when (e.Code == ErrorCode.OperationNotFound)
             {
-                return new StatusCodeResult((int) HttpStatusCode.NoContent);
+                return new StatusCodeResult((int)HttpStatusCode.NoContent);
             }
 
             return Ok();
@@ -123,16 +123,21 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
 
         [HttpGet("api/transactions/broadcast/single/{operationId}")]
         [SwaggerOperation(nameof(GetObservableSingleOperation))]
-        [ProducesResponseType(typeof(BroadcastedSingleTransactionResponse), (int) HttpStatusCode.OK)]
-        [ProducesResponseType((int) HttpStatusCode.NoContent)]
+        [ProducesResponseType(typeof(BroadcastedSingleTransactionResponse), (int)HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.NoContent)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> GetObservableSingleOperation(Guid operationId)
         {
+            if (operationId == Guid.Empty)
+            {
+                return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError(nameof(operationId), "Must be valid guid"));
+            }
+
             var result = await _observableOperationService.GetById(operationId);
 
             if (result == null)
             {
-                return new StatusCodeResult((int) HttpStatusCode.NoContent);
+                return new StatusCodeResult((int)HttpStatusCode.NoContent);
             }
 
             BroadcastedTransactionState MapState(BroadcastStatus status)
@@ -165,12 +170,15 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
 
         [HttpDelete("api/transactions/broadcast/{operationId}")]
         [SwaggerOperation(nameof(RemoveObservableOperation))]
-        [ProducesResponseType((int) HttpStatusCode.OK)]
+        [ProducesResponseType((int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         public async Task<IActionResult> RemoveObservableOperation(Guid operationId)
         {
+            if (operationId == Guid.Empty)
+            {
+                return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError(nameof(operationId), "Must be valid guid"));
+            }
             await _observableOperationService.DeleteOperations(operationId);
-
             return Ok();
         }
     }

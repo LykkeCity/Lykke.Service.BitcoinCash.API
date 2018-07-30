@@ -7,7 +7,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
         public DbSettings Db { get; set; }
         public string Network { get; set; }
 
-        [HttpCheck("/api/status")]
+        [HttpCheck("status")]
         public string InsightApiUrl { get; set; }
 
         [Optional]

@@ -10,7 +10,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.BitcoinCash.API.Controllers
 {
-    public class AssetsController: Controller
+    public class AssetsController : Controller
     {
         private readonly IAssetRepository _assetRepository;
 
@@ -23,17 +23,22 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         [ProducesResponseType(typeof(PaginationResponse<AssetResponse>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
         [HttpGet("api/assets")]
-        public async Task<PaginationResponse<AssetResponse>> GetPaged([FromQuery]int take, [FromQuery]string continuation)
+        public async Task<IActionResult> GetPaged([FromQuery]int take, [FromQuery]string continuation)
         {
             var paginationResult = await _assetRepository.GetPaged(take, continuation);
 
-            return PaginationResponse.From(paginationResult.Continuation, paginationResult.Items.Select(p => new AssetResponse
+            if (take < 1)
+                return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError("take", "Must be positive non zero integer"));
+            if (!string.IsNullOrEmpty(continuation))
+                return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError("continuation", "Must be valid continuation token"));
+
+            return Ok(PaginationResponse.From(paginationResult.Continuation, paginationResult.Items.Select(p => new AssetResponse
             {
                 Address = p.Address,
                 AssetId = p.AssetId,
                 Accuracy = p.Accuracy,
                 Name = p.Name
-            }).ToList().AsReadOnly());
+            }).ToList().AsReadOnly()));
         }
 
         [SwaggerOperation(nameof(GetById))]
@@ -46,7 +51,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             var asset = await _assetRepository.GetById(assetId);
             if (asset == null)
             {
-                return NotFound();
+                return NoContent();
             }
 
             return Ok(new AssetResponse

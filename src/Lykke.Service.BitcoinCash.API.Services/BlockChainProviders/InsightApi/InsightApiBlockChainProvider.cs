@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Common;
 using Common.Log;
 using Flurl;
 using Flurl.Http;
@@ -30,10 +31,63 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
             _log = log;
         }
 
+        public async Task<IEnumerable<string>> GetTransactionsForAddress(string address)
+        {
+            var result = new List<string>();
+
+            const int batchSize = 1000;
+
+            var allTxLoaded = false;
+            int counter = 0;
+
+            while (!allTxLoaded)
+            {
+                var url = _insightApiSettings.Url
+                    .AppendPathSegment($"addr/{address}")
+                    .SetQueryParam("from", counter)
+                    .SetQueryParam("to", counter + batchSize);
+
+                var resp = await GetJson<AddressBalanceResponceContract>(url);
+
+                result.AddRange(resp.Transactions);
+                allTxLoaded = !resp.Transactions.Any();
+
+                counter += batchSize;
+            }
+
+            return result;
+        }
+
+        public async Task<BchTransaction> GetTransaction(string txHash)
+        {
+            var tx = await GetTx((txHash));
+
+            if (tx == null) return null;
+
+            var btgTx = new BchTransaction
+            {
+                Hash = txHash,
+                Timestamp = ((uint)tx.BlockTime).FromUnixDateTime()
+            };
+
+            btgTx.Inputs = tx.Inputs.Select(o => new BchInput()
+            {
+                Address = o.Address,
+                Value = new Money(o.AmountSatoshi)
+            }).ToList();
+
+            btgTx.Outputs = tx.Outputs.Select(o => new BchOutput()
+            {
+                Address = o.ScriptPubKey.Addresses.FirstOrDefault(),
+                Value = new Money(o.ValueBtc, MoneyUnit.BTC)
+            }).ToList();
+            return btgTx;
+        }
+
 
         public async Task<int> GetLastBlockHeight()
         {
-            var url = _insightApiSettings.Url.AppendPathSegment("api/status");
+            var url = _insightApiSettings.Url.AppendPathSegment("status");
             var resp = await GetJson<StatusResponceContract>(url);
             return resp.Info.LastBlockHeight;
         }
@@ -41,7 +95,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         public async Task BroadCastTransaction(Transaction tx)
         {
-            await _insightApiSettings.Url.AppendPathSegment("api/tx/send")
+            await _insightApiSettings.Url.AppendPathSegment("tx/send")
                 .PostJsonAsync(new BroadcastTransactionRequestContract
                 {
                     RawTx = tx.ToHex()
@@ -74,7 +128,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
                 var parsedAddress = _addressValidator.GetBitcoinAddress(address);
                 address = parsedAddress.ScriptPubKey.GetDestinationAddress(BCash.Instance.Mainnet).ToString();
             }
-            var url = _insightApiSettings.Url.AppendPathSegment($"api/addr/{address}/utxo");
+            var url = _insightApiSettings.Url.AppendPathSegment($"addr/{address}/utxo");
 
             return await GetJson<AddressUnspentOutputsResponce[]>(url);
         }
@@ -89,7 +143,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
             try
             {
                 var url = _insightApiSettings.Url
-                    .AppendPathSegment($"api/tx/{txHash}");
+                    .AppendPathSegment($"tx/{txHash}");
 
                 var resp = await GetJson<TxResponceContract>(url);
 
