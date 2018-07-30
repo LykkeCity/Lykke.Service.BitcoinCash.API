@@ -49,8 +49,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
                 var resp = await GetJson<AddressBalanceResponceContract>(url);
 
-                result.AddRange(resp.Transactions);
-                allTxLoaded = !resp.Transactions.Any();
+                if (resp.Transactions != null)
+                    result.AddRange(resp.Transactions);
+                allTxLoaded = resp.Transactions == null || !resp.Transactions.Any();
 
                 counter += batchSize;
             }
@@ -72,13 +73,13 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
             btgTx.Inputs = tx.Inputs.Select(o => new BchInput()
             {
-                Address = o.Address,
+                Address = _addressValidator.GetBitcoinAddress(o.Address)?.ScriptPubKey.GetDestinationAddress(_network).ToString(),
                 Value = new Money(o.AmountSatoshi)
             }).ToList();
 
             btgTx.Outputs = tx.Outputs.Select(o => new BchOutput()
             {
-                Address = o.ScriptPubKey.Addresses.FirstOrDefault(),
+                Address = o.ScriptPubKey.Hex.ToScript().GetDestinationAddress(_network).ToString(),
                 Value = new Money(o.ValueBtc, MoneyUnit.BTC)
             }).ToList();
             return btgTx;

@@ -25,6 +25,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi.
             public ScriptPubKeyContract ScriptPubKey { get; set; }
             public class ScriptPubKeyContract
             {
+                [JsonProperty("hex")]
+                public string Hex { get; set; }
+
                 [JsonProperty("addresses")]
                 public string[] Addresses { get; set; }
             }

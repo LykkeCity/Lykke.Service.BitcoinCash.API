@@ -58,7 +58,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
             var network = Network.GetNetwork(_settings.CurrentValue.Network);
             builder.RegisterInstance(network).As<Network>();
 
-            var bcashNetwork = BCash.Instance.Testnet;
+            var bcashNetwork = BCash.Instance.Regtest;
             if (network == Network.Main)
                 bcashNetwork = BCash.Instance.Mainnet;
 
