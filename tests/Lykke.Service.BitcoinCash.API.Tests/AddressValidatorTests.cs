@@ -13,8 +13,9 @@ namespace Lykke.Service.BitcoinCash.API.Tests
             var addresses = new[]
             {
                 "muLn6NV9aB9VLM7rJvh5i1wtUEXgDGNxW2",
+                "bchreg:qq79zqy00c02p6jxx4vavx9gpl78uq8f0qmadakpzx"
             };
-            var addressValidator = new AddressValidator(Network.TestNet, BCash.Instance.Testnet);
+            var addressValidator = new AddressValidator(Network.TestNet, BCash.Instance.Regtest);
 
             foreach (var address in addresses)
             {
