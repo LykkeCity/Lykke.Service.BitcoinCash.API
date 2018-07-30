@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.Constants;
@@ -10,6 +11,8 @@ using Lykke.Service.BitcoinCash.API.Helpers;
 using Lykke.Service.BlockchainApi.Contract;
 using Lykke.Service.BlockchainApi.Contract.Balances;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.WindowsAzure.Storage.Table;
+using Newtonsoft.Json;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace Lykke.Service.BitcoinCash.API.Controllers
@@ -79,21 +82,32 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         [SwaggerOperation(nameof(GetBalances))]
         [ProducesResponseType(typeof(PaginationResponse<WalletBalanceContract>), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
-        public async Task<PaginationResponse<WalletBalanceContract>> GetBalances([FromQuery]int take, [FromQuery] string continuation)
+        public async Task<IActionResult> GetBalances([FromQuery]int take, [FromQuery] string continuation)
         {
-            if (take <= 0)
+            if (take < 1)
             {
-                throw new BusinessException("Take must be greater than zero", ErrorCode.BadInputParameter);
+                return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError("take", "Must be positive non zero integer"));
+            }
+            if (!string.IsNullOrEmpty(continuation))
+            {
+                try
+                {
+                    JsonConvert.DeserializeObject<TableContinuationToken>(Utils.HexToString(continuation));
+                }
+                catch (JsonReaderException)
+                {
+                    return BadRequest(ErrorResponse.Create("Invalid parameter").AddModelError("continuation", "Must be valid continuation token"));
+                }
             }
             var padedResult = await _balanceService.GetBalances(take, continuation);
 
-            return PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select(p => new WalletBalanceContract
+            return Ok(PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select(p => new WalletBalanceContract
             {
                 Address = p.Address,
                 Balance = MoneyConversionHelper.SatoshiToContract(p.BalanceSatoshi),
                 AssetId = Constants.Assets.BitcoinCash.AssetId,
                 Block = p.UpdatedAtBlockHeight
-            }).ToList().AsReadOnly());
+            }).ToList().AsReadOnly()));
         }
     }
 }

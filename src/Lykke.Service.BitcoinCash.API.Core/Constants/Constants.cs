@@ -2,6 +2,8 @@
 {
     public static class Constants
     {
+        public const string BCashFilter = "bcash";
+
         public static class Assets
         {
             public static class BitcoinCash
