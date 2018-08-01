@@ -10,6 +10,7 @@ using Lykke.Job.BitcoinCash.Models;
 using Lykke.Job.BitcoinCash.Modules;
 using Lykke.JobTriggers.Triggers;
 using Lykke.Logs;
+using Lykke.Logs.Slack;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Binder;
 using Lykke.Service.BitcoinCash.API.Core.Services;
 using Lykke.Service.BitcoinCash.API.Core.Settings;
@@ -221,8 +222,23 @@ namespace Lykke.Job.BitcoinCash
                     consoleLogger);
 
                 azureStorageLogger.Start();
-
                 aggregateLogger.AddLog(azureStorageLogger);
+
+                var allMessagesSlackLogger = LykkeLogToSlack.Create
+                (
+                    slackService,
+                    "BlockChainIntegration",
+                    // ReSharper disable once RedundantArgumentDefaultValue
+                    LogLevel.All
+                );
+                aggregateLogger.AddLog(allMessagesSlackLogger);
+                var importantMessagesSlackLogger = LykkeLogToSlack.Create
+                (
+                    slackService,
+                    "BlockChainIntegrationImportantMessages",
+                    LogLevel.All ^ LogLevel.Info
+                );
+                aggregateLogger.AddLog(importantMessagesSlackLogger);               
             }
 
             return aggregateLogger;

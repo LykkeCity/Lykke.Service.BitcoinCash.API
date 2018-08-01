@@ -6,6 +6,7 @@ using AzureStorage.Tables;
 using Common.Log;
 using Lykke.Common.ApiLibrary.Swagger;
 using Lykke.Logs;
+using Lykke.Logs.Slack;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Binder;
 using Lykke.Service.BitcoinCash.API.Core.Services;
 using Lykke.Service.BitcoinCash.API.Core.Settings;
@@ -207,6 +208,22 @@ namespace Lykke.Service.BitcoinCash.API
                 azureStorageLogger.Start();
 
                 aggregateLogger.AddLog(azureStorageLogger);
+
+                var allMessagesSlackLogger = LykkeLogToSlack.Create
+                (
+                    slackService,
+                    "BlockChainIntegration",
+                    // ReSharper disable once RedundantArgumentDefaultValue
+                    LogLevel.All
+                );
+                aggregateLogger.AddLog(allMessagesSlackLogger);
+                var importantMessagesSlackLogger = LykkeLogToSlack.Create
+                (
+                    slackService,
+                    "BlockChainIntegrationImportantMessages",
+                    LogLevel.All ^ LogLevel.Info
+                );
+                aggregateLogger.AddLog(importantMessagesSlackLogger);
             }
 
             return aggregateLogger;
