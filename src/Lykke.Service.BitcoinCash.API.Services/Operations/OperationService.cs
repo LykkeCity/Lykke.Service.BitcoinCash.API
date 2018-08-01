@@ -38,11 +38,15 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
             var existingOperation = await _operationMetaRepository.Get(operationId);
             if (existingOperation != null)
             {
+                var existingAmount = existingOperation.IncludeFee
+                    ? existingOperation.AmountSatoshi + existingOperation.FeeSatoshi
+                    : existingOperation.AmountSatoshi;
+
                 if (existingOperation.FromAddress != fromAddress.ToString() ||
                     existingOperation.ToAddress != toAddress.ToString() ||
                     existingOperation.AssetId != assetId ||
-                    existingOperation.AmountSatoshi != amountToSend.Satoshi ||
-                    existingOperation.IncludeFee != includeFee)
+                    existingOperation.IncludeFee != includeFee ||
+                    existingAmount != amountToSend.Satoshi)
                     throw new BusinessException("Conflict in operation parameters", ErrorCode.Conflict);
 
                 return await GetExistingTransaction(existingOperation.OperationId, existingOperation.Hash);
