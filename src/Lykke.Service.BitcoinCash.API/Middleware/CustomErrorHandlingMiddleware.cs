@@ -49,9 +49,9 @@ namespace Lykke.Service.BitcoinCash.API.Middleware
         private async Task CreateErrorResponse(HttpContext ctx, Exception ex)
         {
             ctx.Response.ContentType = "application/json";
-            
 
-            ctx.Response.StatusCode = IsValidationError(ex) ? 400 : 500;
+
+            ctx.Response.StatusCode = GetStatusCode(ex);
 
             var response = ErrorResponse.Create(ex.ToString());
 
@@ -60,10 +60,18 @@ namespace Lykke.Service.BitcoinCash.API.Middleware
             await ctx.Response.WriteAsync(responseJson);
         }
 
-        private bool IsValidationError(Exception ex)
+        private int GetStatusCode(Exception ex)
         {
-            return ex is BusinessException businessException && businessException.Code == ErrorCode.BadInputParameter;
-        }
+            switch (ex)
+            {
+                case BusinessException e when e.Code == ErrorCode.Conflict:
+                    return 409;
+                case BusinessException e when e.Code == ErrorCode.BadInputParameter:
+                    return 400;
+                default:
+                    return 500;
+            }
+        }        
 
         private string ReadBody(HttpContext context)
         {

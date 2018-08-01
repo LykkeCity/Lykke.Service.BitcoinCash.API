@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common;
+using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using NBitcoin;
@@ -36,7 +37,16 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
         {
             var existingOperation = await _operationMetaRepository.Get(operationId);
             if (existingOperation != null)
+            {
+                if (existingOperation.FromAddress != fromAddress.ToString() ||
+                    existingOperation.ToAddress != toAddress.ToString() ||
+                    existingOperation.AssetId != assetId ||
+                    existingOperation.AmountSatoshi != amountToSend.Satoshi ||
+                    existingOperation.IncludeFee != includeFee)
+                    throw new BusinessException("Conflict in operation parameters", ErrorCode.Conflict);
+
                 return await GetExistingTransaction(existingOperation.OperationId, existingOperation.Hash);
+            }
 
             var buildedTransaction = await _transactionBuilder.GetTransferTransaction(fromAddress, toAddress, amountToSend, includeFee);
 
