@@ -24,7 +24,7 @@
     <PackageReference Include="Lykke.AzureStorage" Version="8.10.0" />
     <PackageReference Include="Lykke.Common.ApiLibrary" Version="1.10.1" />
     <PackageReference Include="Lykke.JobTriggers" Version="2.2.0" />
-    <PackageReference Include="Lykke.Logs" Version="5.1.1" />
+    <PackageReference Include="Lykke.Logs" Version="5.2.0" />
     <PackageReference Include="Lykke.SlackNotification.AzureQueue" Version="2.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.1" />
