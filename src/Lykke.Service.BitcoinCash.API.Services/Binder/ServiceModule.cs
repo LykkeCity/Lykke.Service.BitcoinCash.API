@@ -1,4 +1,6 @@
-﻿using Autofac;
+﻿using System;
+using System.Net;
+using Autofac;
 using Autofac.Features.AttributeFilters;
 using BCashAddr;
 using Common.Log;
@@ -25,6 +27,7 @@ using Lykke.Service.BitcoinCash.API.Services.Wallet;
 using Lykke.SettingsReader;
 using NBitcoin;
 using NBitcoin.Altcoins;
+using NBitcoin.RPC;
 
 namespace Lykke.Service.BitcoinCash.API.Services.Binder
 {
@@ -87,6 +90,14 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
         private void RegisterInsightApiBlockChainReaders(ContainerBuilder builder)
         {
             builder.RegisterInstance(new InsightApiSettings() { Url = _settings.CurrentValue.InsightApiUrl });
+            builder.Register(x =>
+            {
+                var network = x.Resolve<Network>();
+                return new RPCClient(
+                    new NetworkCredential(_settings.CurrentValue.RpcUserName, _settings.CurrentValue.RpcPassword),
+                    new Uri(_settings.CurrentValue.RpcHost), network);
+            }).SingleInstance();
+
             builder.RegisterType<InsightApiBlockChainProvider>().As<IBlockChainProvider>();
         }
 

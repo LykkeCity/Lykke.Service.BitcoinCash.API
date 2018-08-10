@@ -13,19 +13,22 @@ using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi.Contracts;
 using NBitcoin;
 using NBitcoin.Altcoins;
+using NBitcoin.RPC;
 
 namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 {
     internal class InsightApiBlockChainProvider : IBlockChainProvider
     {
         private readonly InsightApiSettings _insightApiSettings;
+        private readonly RPCClient _rpcClient;
         private readonly IAddressValidator _addressValidator;
         private readonly Network _network;
         private readonly ILog _log;
 
-        public InsightApiBlockChainProvider(InsightApiSettings insightApiSettings, IAddressValidator addressValidator, Network network, ILog log)
+        public InsightApiBlockChainProvider(InsightApiSettings insightApiSettings, RPCClient rpcClient, IAddressValidator addressValidator, Network network, ILog log)
         {
             _insightApiSettings = insightApiSettings;
+            _rpcClient = rpcClient;
             _addressValidator = addressValidator;
             _network = network;
             _log = log;
@@ -94,13 +97,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
         }
 
 
-        public async Task BroadCastTransaction(Transaction tx)
+        public Task BroadCastTransaction(Transaction tx)
         {
-            await _insightApiSettings.Url.AppendPathSegment("tx/send")
-                .PostJsonAsync(new BroadcastTransactionRequestContract
-                {
-                    RawTx = tx.ToHex()
-                }).ReceiveString();
+            return _rpcClient.SendRawTransactionAsync(tx);
         }
 
         public async Task<int> GetTxConfirmationCount(string txHash)

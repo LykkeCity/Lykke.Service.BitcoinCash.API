@@ -10,6 +10,12 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
         [HttpCheck("status")]
         public string InsightApiUrl { get; set; }
 
+        public string RpcHost { get; set; }
+
+        public string RpcUserName { get; set; }
+
+        public string RpcPassword { get; set; }
+
         [Optional]
         public int FeePerByte { get; set; } = 1;
 
