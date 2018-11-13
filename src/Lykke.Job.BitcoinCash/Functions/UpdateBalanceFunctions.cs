@@ -34,6 +34,7 @@ namespace Lykke.Job.BitcoinCash.Functions
                 {
                     try
                     {
+                        await Task.Delay(TimeSpan.FromSeconds(5));
                         await _walletBalanceService.UpdateBalance(observableWallet);
                     }
                     catch (Exception e)

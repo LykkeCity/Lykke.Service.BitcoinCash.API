@@ -51,6 +51,7 @@ namespace Lykke.Job.BitcoinCash.Functions
             {
                 try
                 {
+                    await Task.Delay(TimeSpan.FromSeconds(30));
                     await CheckUnconfirmedTransaction(unconfirmedTransaction);
 
                 }
