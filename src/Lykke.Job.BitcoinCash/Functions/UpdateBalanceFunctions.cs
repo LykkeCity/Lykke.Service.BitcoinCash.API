@@ -22,7 +22,7 @@ namespace Lykke.Job.BitcoinCash.Functions
             _log = log;
         }
 
-        [TimerTrigger("00:10:00")]
+        [TimerTrigger("00:00:05")]
         public async Task UpdateBalances()
         {
             string continuation = null;

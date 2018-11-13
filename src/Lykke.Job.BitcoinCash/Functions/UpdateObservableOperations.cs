@@ -42,7 +42,7 @@ namespace Lykke.Job.BitcoinCash.Functions
             _walletBalanceService = walletBalanceService;
         }
 
-        [TimerTrigger("00:02:00")]
+        [TimerTrigger("00:00:30")]
         public async Task DetectUnconfirmedTransactions()
         {
             var unconfirmedTxs = await _unconfirmedTransactionRepository.GetAll();
