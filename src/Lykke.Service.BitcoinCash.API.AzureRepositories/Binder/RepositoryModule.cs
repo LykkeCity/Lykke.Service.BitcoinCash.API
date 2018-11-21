@@ -36,7 +36,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Binder
 
         private void RegisterRepo(ContainerBuilder builder)
         {
-            builder.RegisterInstance(new AssetRepository())
+            builder.RegisterInstance(new AssetRepository(defaultAssetId: _settings.CurrentValue.AssetId))
                 .As<IAssetRepository>();
 
             builder.RegisterInstance(new OperationMetaRepository(

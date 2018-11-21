@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
+using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.Broadcast;
 using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
@@ -24,18 +25,20 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         private readonly IBroadcastService _broadcastService;
         private readonly IObservableOperationService _observableOperationService;
         private readonly Network _network;
+        private readonly IAssetRepository _assetRepository;
 
 
         public OperationsController(IOperationService operationService,
             IAddressValidator addressValidator,
             IBroadcastService broadcastService,
-            IObservableOperationService observableOperationService, Network network)
+            IObservableOperationService observableOperationService, Network network, IAssetRepository assetRepository)
         {
             _operationService = operationService;
             _addressValidator = addressValidator;
             _broadcastService = broadcastService;
             _observableOperationService = observableOperationService;
             _network = network;
+            _assetRepository = assetRepository;
         }
 
         [HttpPost("api/transactions/single")]
@@ -55,7 +58,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
                 throw new BusinessException($"Amount can't be less or equal to zero: {amountSatoshi}", ErrorCode.BadInputParameter);
             }
 
-            if (request.AssetId != Constants.Assets.BitcoinCash.AssetId)
+            if (request.AssetId != (await _assetRepository.GetDefaultAsset()).AssetId)
             {
 
                 throw new BusinessException("Invalid assetId", ErrorCode.BadInputParameter);
