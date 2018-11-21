@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
@@ -11,10 +12,12 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
     public class HistoryService : IHistoryService
     {
         private readonly IBlockChainProvider _blockChainProvider;
+        private readonly IAssetRepository _assetRepository;
 
-        public HistoryService(IBlockChainProvider blockChainProvider)
+        public HistoryService(IBlockChainProvider blockChainProvider, IAssetRepository assetRepository)
         {
             _blockChainProvider = blockChainProvider;
+            _assetRepository = assetRepository;
         }
 
         public Task<IEnumerable<HistoricalTransactionDto>> GetHistoryFrom(BitcoinAddress address, string afterHash, int take)
@@ -44,7 +47,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                     break;
 
                 var tx = await _blockChainProvider.GetTransaction(txId);
-                var dto = MapToHistoricalTransaction(tx, address);
+                var dto = await MapToHistoricalTransaction(tx, address);
 
                 if (dto.IsSending == isSending)
                     result.Add(dto);
@@ -54,7 +57,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
         }
 
 
-        private HistoricalTransactionDto MapToHistoricalTransaction(BchTransaction tx, string requestedAddress)
+        private async Task<HistoricalTransactionDto> MapToHistoricalTransaction(BchTransaction tx, string requestedAddress)
         {
             var isSending = tx.Inputs.Where(p => p.Address == requestedAddress).Sum(p => p.Value) >=
                             tx.Outputs.Where(p => p.Address == requestedAddress).Sum(p => p.Value);
@@ -80,7 +83,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 IsSending = isSending,
                 AmountSatoshi = amount,
                 FromAddress = from,
-                AssetId = Constants.Assets.BitcoinCash.AssetId,
+                AssetId = (await _assetRepository.GetDefaultAsset()).AssetId,
                 ToAddress = to,
                 TimeStamp = tx.Timestamp
             };

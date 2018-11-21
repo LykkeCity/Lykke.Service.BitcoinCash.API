@@ -23,5 +23,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
 
         [Optional]
         public double SpentOutputsExpirationDays { get; set; } = 7;
+
+        public string AssetId { get; set; }
     }
 }
