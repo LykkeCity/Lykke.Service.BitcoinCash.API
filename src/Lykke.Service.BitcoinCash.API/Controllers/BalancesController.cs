@@ -104,11 +104,13 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             }
             var padedResult = await _balanceService.GetBalances(take, continuation);
 
-            return Ok(PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select(async p => new WalletBalanceContract
+            var assetId = (await _assetRepository.GetDefaultAsset()).AssetId;
+
+            return Ok(PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select( p => new WalletBalanceContract
             {
                 Address = p.Address,
                 Balance = MoneyConversionHelper.SatoshiToContract(p.BalanceSatoshi),
-                AssetId = (await _assetRepository.GetDefaultAsset()).AssetId,
+                AssetId = assetId,
                 Block = p.UpdatedAtBlockHeight
             }).ToList().AsReadOnly()));
         }
