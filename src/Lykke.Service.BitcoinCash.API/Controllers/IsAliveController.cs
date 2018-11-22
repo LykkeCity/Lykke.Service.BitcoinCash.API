@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Lykke.Common.Api.Contract.Responses;
+using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.SwaggerGen;
@@ -13,10 +15,12 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
     public class IsAliveController : Controller
     {
         private readonly IHealthService _healthService;
+        private readonly IBlockChainProvider _blockChainProvider;
 
-        public IsAliveController(IHealthService healthService)
+        public IsAliveController(IHealthService healthService, IBlockChainProvider blockChainProvider)
         {
             _healthService = healthService;
+            _blockChainProvider = blockChainProvider;
         }
 
         /// <summary>
@@ -27,34 +31,9 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         [SwaggerOperation("IsAlive")]
         [ProducesResponseType(typeof(IsAliveResponse), (int)HttpStatusCode.OK)]
         [ProducesResponseType(typeof(ErrorResponse), (int)HttpStatusCode.InternalServerError)]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            var healthViloationMessage = _healthService.GetHealthViolationMessage();
-            if (healthViloationMessage != null)
-            {
-                return StatusCode(
-                    (int)HttpStatusCode.InternalServerError,
-                    ErrorResponse.Create($"Service is unhealthy: {healthViloationMessage}"));
-            }
-
-            // NOTE: Feel free to extend IsAliveResponse, to display job-specific indicators
-            return Ok(new IsAliveResponse
-            {
-                Name = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationName,
-                Version = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application.ApplicationVersion,
-                Env = Program.EnvInfo,
-#if DEBUG
-                IsDebug = true,
-#else
-                IsDebug = false,
-#endif
-                IssueIndicators = _healthService.GetHealthIssues()
-                    .Select(i => new IsAliveResponse.IssueIndicator
-                    {
-                        Type = i.Type,
-                        Value = i.Value
-                    })
-            });
+            return Ok();
         }
     }
 }
