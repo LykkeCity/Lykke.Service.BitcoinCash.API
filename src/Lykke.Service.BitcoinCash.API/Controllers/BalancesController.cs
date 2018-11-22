@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
+using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
@@ -21,11 +22,13 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
     {
         private readonly IAddressValidator _addressValidator;
         private readonly IWalletBalanceService _balanceService;
+        private readonly IAssetRepository _assetRepository;
 
-        public BalancesController(IAddressValidator addressValidator, IWalletBalanceService balanceService)
+        public BalancesController(IAddressValidator addressValidator, IWalletBalanceService balanceService, IAssetRepository assetRepository)
         {
             _addressValidator = addressValidator;
             _balanceService = balanceService;
+            _assetRepository = assetRepository;
         }
 
         [HttpPost("api/balances/{address}/observation")]
@@ -101,11 +104,13 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             }
             var padedResult = await _balanceService.GetBalances(take, continuation);
 
-            return Ok(PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select(p => new WalletBalanceContract
+            var assetId = (await _assetRepository.GetDefaultAsset()).AssetId;
+
+            return Ok(PaginationResponse.From(padedResult.Continuation, padedResult.Items.Select( p => new WalletBalanceContract
             {
                 Address = p.Address,
                 Balance = MoneyConversionHelper.SatoshiToContract(p.BalanceSatoshi),
-                AssetId = Constants.Assets.BitcoinCash.AssetId,
+                AssetId = assetId,
                 Block = p.UpdatedAtBlockHeight
             }).ToList().AsReadOnly()));
         }

@@ -17,17 +17,29 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Asset
 
     public class AssetRepository:IAssetRepository
     {
-        private readonly IEnumerable<IAsset> _mockList = new List<IAsset>
-        {
+        private readonly IEnumerable<IAsset> _mockList;
 
-            new Asset
+        public AssetRepository(string defaultAssetId)
+        {
+            _mockList = new List<IAsset>
             {
-                Address = Constants.Assets.BitcoinCash.Address,
-                AssetId = Constants.Assets.BitcoinCash.AssetId,
-                Accuracy = Constants.Assets.BitcoinCash.Accuracy,
-                Name = Constants.Assets.BitcoinCash.Name
-            }
-        };
+
+                new Asset
+                {
+                    Address = Constants.Assets.BitcoinCash.Address,
+                    AssetId = defaultAssetId,
+                    Accuracy = Constants.Assets.BitcoinCash.Accuracy,
+                    Name = Constants.Assets.BitcoinCash.Name
+                }
+            };
+        }
+
+
+
+        public Task<IAsset> GetDefaultAsset()
+        {
+            return Task.FromResult(_mockList.Single());
+        }
 
         public Task<IPaginationResult<IAsset>> GetPaged(int take, string continuation)
         {
