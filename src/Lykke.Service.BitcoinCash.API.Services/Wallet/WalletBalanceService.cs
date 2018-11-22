@@ -12,19 +12,16 @@ namespace Lykke.Service.BitcoinCash.API.Services.Wallet
         private readonly IObservableWalletRepository _observableWalletRepository;
         private readonly IBlockChainProvider _blockChainProvider;
         private readonly OperationsConfirmationsSettings _confirmationsSettings;
-        private readonly IObservableWallet _observableWallet;
 
         public WalletBalanceService(IWalletBalanceRepository balanceRepository,
             IObservableWalletRepository observableWalletRepository,
             IBlockChainProvider blockChainProvider,
-            OperationsConfirmationsSettings confirmationsSettings,
-            IObservableWallet observableWallet)
+            OperationsConfirmationsSettings confirmationsSettings)
         {
             _balanceRepository = balanceRepository;
             _observableWalletRepository = observableWalletRepository;
             _blockChainProvider = blockChainProvider;
             _confirmationsSettings = confirmationsSettings;
-            _observableWallet = observableWallet;
         }
 
         public async Task Subscribe(string address)
