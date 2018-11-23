@@ -66,13 +66,15 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             [FromQuery] string afterHash,
             [FromQuery] int take)
         {
-            return new StatusCodeResult((int) HttpStatusCode.NotImplemented);
-            //if (take <= 0)
-            //{
-            //    return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
-            //}
+            if (take <= 0)
+            {
+                return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
+            }
 
-            //ValidateAddress(address);
+            ValidateAddress(address);
+
+
+            return Ok();
 
             //var addr = _addressValidator.GetBitcoinAddress(address);
             //var result = await _historyService.GetHistoryFrom(addr, afterHash, take);
@@ -87,13 +89,14 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             [FromQuery] string afterHash,
             [FromQuery] int take)
         {
-            return new StatusCodeResult((int)HttpStatusCode.NotImplemented);
-            //if (take <= 0)
-            //{
-            //    return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
-            //}
+            if (take <= 0)
+            {
+                return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
+            }
 
-            //ValidateAddress(address);
+            ValidateAddress(address);
+
+            return Ok();
 
             //var btcAddress = _addressValidator.GetBitcoinAddress(address);
             //var result = await _historyService.GetHistoryTo(btcAddress, afterHash, take);
