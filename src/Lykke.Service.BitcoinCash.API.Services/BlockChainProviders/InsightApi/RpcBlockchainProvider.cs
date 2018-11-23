@@ -105,9 +105,9 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
             return unspentOutputs.Sum(p => p.Amount.Satoshi);
         }
 
-        public async Task<int> GetLastBlockHeight()
+        public Task<int> GetLastBlockHeight()
         {
-            return (int) (await _client.GetBlockchainInfoAsync()).Blocks;
+            return _client.GetBlockCountAsync();
         }
 
         public Task<IEnumerable<string>> GetTransactionsForAddress(string address)
