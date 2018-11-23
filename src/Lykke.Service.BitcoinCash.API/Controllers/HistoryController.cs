@@ -74,7 +74,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             ValidateAddress(address);
 
 
-            return Ok();
+            return Ok(Enumerable.Empty<HistoricalTransactionContract>());
 
             //var addr = _addressValidator.GetBitcoinAddress(address);
             //var result = await _historyService.GetHistoryFrom(addr, afterHash, take);
@@ -96,7 +96,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
 
             ValidateAddress(address);
 
-            return Ok();
+            return Ok(Enumerable.Empty<HistoricalTransactionContract>());
 
             //var btcAddress = _addressValidator.GetBitcoinAddress(address);
             //var result = await _historyService.GetHistoryTo(btcAddress, afterHash, take);
