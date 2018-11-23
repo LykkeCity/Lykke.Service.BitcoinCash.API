@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using AsyncFriendlyStackTrace;
 using Common.Log;
+using Lykke.Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
@@ -70,8 +72,18 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         public async Task<int> GetTxConfirmationCount(string txHash)
         {
-            var tx = await _client.GetRawTransactionInfoAsync(uint256.Parse(txHash));
-            return (int) tx.Confirmations;
+            try
+            {
+                var tx = await _client.GetRawTransactionInfoAsync(uint256.Parse(txHash));
+
+                return (int)tx.Confirmations;
+            }
+            catch (RPCException e) when(e.RPCCode == RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY)
+            {
+                await _log.WriteInfoAsync(nameof(RpcBlockchainProvider), nameof(GetTxConfirmationCount), $"Tx not found {e.ToAsyncString()}");
+
+                return 0;
+            }
         }
 
         public Task ImportWatchOnlyAddress(string address)
