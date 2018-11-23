@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
+using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using NBitcoin;
 using NBitcoin.RPC;
 
@@ -13,16 +15,57 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
     {
         private readonly RPCClient _client;
         private readonly IAddressValidator _addressValidator;
+        private readonly ILog _log;
 
-        public RpcBlockchainProvider(RPCClient client, IAddressValidator addressValidator)
+        public RpcBlockchainProvider(RPCClient client, IAddressValidator addressValidator, ILog log)
         {
             _client = client;
             _addressValidator = addressValidator;
+            _log = log;
         }
 
-        public Task BroadCastTransaction(Transaction tx)
+        public async Task BroadCastTransaction(Transaction tx)
         {
-            return _client.SendRawTransactionAsync(tx);
+
+            try
+            {
+                await _client.SendRawTransactionAsync(tx);
+            }
+            catch (RPCException e) when(NeedToRebuildTransaction(e))
+            {
+                await _log.WriteWarningAsync(nameof(RpcBlockchainProvider), nameof(BroadCastTransaction), tx.ToHex(),
+                    "Retrying tx build", e);
+
+                throw new BusinessException($"Retrying tx build code: {e.RPCResult.Error.Code} message {e.RPCResult.Error.Message}",
+                    ErrorCode.BuildingShouldBeRepeated,
+                    e);
+            }
+
+            catch (RPCException e)
+            {
+                await _log.WriteWarningAsync(nameof(RpcBlockchainProvider), nameof(BroadCastTransaction), tx.ToHex(),
+                    "Broadcast error", e);
+
+                throw new BusinessException($"Error while tx broadcast: {e.RPCResult.Error.Code} message {e.RPCResult.Error.Message}",
+                    ErrorCode.BroadcastError,
+                    e);
+            }
+        }
+
+        private bool NeedToRebuildTransaction(RPCException ex)
+        {
+            if (ex.RPCResult.Error.Code == RPCErrorCode.RPC_TRANSACTION_ERROR &&
+                ex.RPCResult.Error.Message == "Missing inputs")
+            {
+                return true;
+            }
+
+            if (ex.RPCResult.Error.Message == "txn-mempool-conflict")
+            {
+                return true;
+            }
+
+            return false;
         }
 
         public async Task<int> GetTxConfirmationCount(string txHash)

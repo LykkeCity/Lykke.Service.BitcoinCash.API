@@ -11,6 +11,7 @@ using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
 using Lykke.Service.BitcoinCash.API.Helpers;
+using Lykke.Service.BlockchainApi.Contract;
 using Lykke.Service.BlockchainApi.Contract.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -119,6 +120,15 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             catch (BusinessException e) when (e.Code == ErrorCode.OperationNotFound)
             {
                 return new StatusCodeResult((int)HttpStatusCode.NoContent);
+            }
+            catch (BusinessException e) when (e.Code == ErrorCode.BuildingShouldBeRepeated)
+            {
+                
+                return BadRequest(new BlockchainErrorResponse
+                {
+                    ErrorCode = BlockchainErrorCode.BuildingShouldBeRepeated,
+                    ErrorMessage = e.ToString()
+                });
             }
 
             return Ok();
