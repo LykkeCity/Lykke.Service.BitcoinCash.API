@@ -66,17 +66,18 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             [FromQuery] string afterHash,
             [FromQuery] int take)
         {
-            if (take <= 0)
-            {
-                return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
-            }
+            return new StatusCodeResult((int) HttpStatusCode.NotImplemented);
+            //if (take <= 0)
+            //{
+            //    return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
+            //}
 
-            ValidateAddress(address);
+            //ValidateAddress(address);
 
-            var addr = _addressValidator.GetBitcoinAddress(address);
-            var result = await _historyService.GetHistoryFrom(addr, afterHash, take);
+            //var addr = _addressValidator.GetBitcoinAddress(address);
+            //var result = await _historyService.GetHistoryFrom(addr, afterHash, take);
 
-            return Ok(result.Select(ToHistoricalTransaction));
+            //return Ok(result.Select(ToHistoricalTransaction));
         }
 
         [HttpGet("to/{address}")]
@@ -86,17 +87,18 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             [FromQuery] string afterHash,
             [FromQuery] int take)
         {
-            if (take <= 0)
-            {
-                return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
-            }
+            return new StatusCodeResult((int)HttpStatusCode.NotImplemented);
+            //if (take <= 0)
+            //{
+            //    return BadRequest(new ErrorResponse() { ErrorMessage = $"{nameof(take)} must be greater than zero" });
+            //}
 
-            ValidateAddress(address);
+            //ValidateAddress(address);
 
-            var btcAddress = _addressValidator.GetBitcoinAddress(address);
-            var result = await _historyService.GetHistoryTo(btcAddress, afterHash, take);
+            //var btcAddress = _addressValidator.GetBitcoinAddress(address);
+            //var result = await _historyService.GetHistoryTo(btcAddress, afterHash, take);
 
-            return Ok(result.Select(ToHistoricalTransaction));
+            //return Ok(result.Select(ToHistoricalTransaction));
         }
 
         private void ValidateAddress(string address)
