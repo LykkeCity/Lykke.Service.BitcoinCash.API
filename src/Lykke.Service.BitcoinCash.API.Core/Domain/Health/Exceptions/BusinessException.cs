@@ -31,7 +31,6 @@ namespace Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions
         TransactionAlreadyBroadcasted = 13,
         BlockChainApiError = 14,
         BroadcastError = 15,
-        Conflict = 16,
-        BuildingShouldBeRepeated = 17
+        Conflict = 16
     }
 }
