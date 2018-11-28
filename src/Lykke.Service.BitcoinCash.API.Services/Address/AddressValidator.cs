@@ -3,6 +3,7 @@ using Autofac.Features.AttributeFilters;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.Constants;
 using NBitcoin;
+using NBitcoin.Altcoins;
 
 namespace Lykke.Service.BitcoinCash.API.Services.Address
 {
@@ -48,11 +49,41 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
 
         public BitcoinAddress GetBitcoinAddress(string address)
         {
+
+            //eg moc231tgxApbRSwLNrc9ZbSVDktTRo3acK
             var legacyAddress = GetBitcoinAddress(address, _network);
             if (legacyAddress != null)
                 return legacyAddress;
 
-            return GetBitcoinAddress(address, _bcashNetwork);
+            //eg: bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
+            var canonicalAddress = GetBitcoinAddress(address, _bcashNetwork);
+
+            if (canonicalAddress != null)
+                return canonicalAddress;
+
+            //eg qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
+            var addressWithoutPrefix =
+                GetBitcoinAddress($"{GetAddressPrefix(_bcashNetwork)}:{address?.Trim()}", _bcashNetwork);
+
+            return addressWithoutPrefix;
+        }
+
+        private static string GetAddressPrefix(Network bcashNetwork)
+        {
+            if (bcashNetwork == BCash.Instance.Mainnet)
+            {
+                return "bitcoincash";
+            }
+            if (bcashNetwork == BCash.Instance.Regtest)
+            {
+                return "bchreg";
+            }
+            if (bcashNetwork == BCash.Instance.Testnet)
+            {
+                return "bchtest";
+            }
+
+            throw new ArgumentException("Unknown bcash network", nameof(bcashNetwork));
         }
     }
 }
