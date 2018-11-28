@@ -26,17 +26,17 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        public BitcoinAddress GetBitcoinAddress(string base58Date, Network network)
+        public BitcoinAddress GetBitcoinAddress(string address, Network network)
         {
             try
             {
-                return BitcoinAddress.Create(base58Date, network);
+                return BitcoinAddress.Create(address, network);
             }
             catch (Exception)
             {
                 try
                 {
-                    return new BitcoinColoredAddress(base58Date, network).Address;
+                    return new BitcoinColoredAddress(address, network).Address;
                 }
                 catch (Exception)
                 {
@@ -46,13 +46,13 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        public BitcoinAddress GetBitcoinAddress(string base58Data)
+        public BitcoinAddress GetBitcoinAddress(string address)
         {
-            var legacyAddress = GetBitcoinAddress(base58Data, _network);
+            var legacyAddress = GetBitcoinAddress(address, _network);
             if (legacyAddress != null)
                 return legacyAddress;
 
-            return GetBitcoinAddress(base58Data, _bcashNetwork);
+            return GetBitcoinAddress(address, _bcashNetwork);
         }
     }
 }
