@@ -22,6 +22,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
     class Program
     {
         private const string SettingsUrl = "settingsUrl";
+        private const string HotWallet = "hotWallet";
 
         static void Main(string[] args)
         {
@@ -33,6 +34,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             var arguments = new Dictionary<string, CommandArgument>
             {
                 { SettingsUrl, application.Argument(SettingsUrl, "Url of a Bitcoin cash service settings.") },
+                { HotWallet, application.Argument(HotWallet, "Hot wallet") },
             };
 
             application.HelpOption("-? | -h | --help");
@@ -48,7 +50,9 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                     {
                         await Import
                         (
-                            arguments[SettingsUrl].Value
+                            arguments[SettingsUrl].Value,
+
+                            arguments[HotWallet].Value
 
                         );
                     }
@@ -68,7 +72,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             application.Execute(args);
         }
 
-        private static async Task Import(string settingsUrl)
+        private static async Task Import(string settingsUrl, string hotwallet)
         {
             if (!Uri.TryCreate(settingsUrl, UriKind.Absolute, out _))
             {
@@ -96,22 +100,22 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             var observableWalletRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
                 "ObservableWallets", logFactory));
-
             
-
-
             Console.WriteLine("Retrieving wallets");
 
             var allWallets = await observableWalletRepository.GetAll();
-            var total = allWallets.Count();
+
+            var addressesToImport = allWallets.Select(p => p.Address).Union(new [] { hotwallet }).ToList();
+            
+            var total = addressesToImport.Count;
 
             var counter = 0;
-            foreach (var observableWallet in allWallets)
+            foreach (var addr in addressesToImport)
             {
-                await bcProvider.ImportWatchOnlyAddress(observableWallet.Address);
+                await bcProvider.ImportWatchOnlyAddress(addr);
 
                 counter++;
-                Console.WriteLine($"{counter} of {total} imported -- {observableWallet.Address}");
+                Console.WriteLine($"{counter} of {total} imported -- {addr}");
             }
 
             Console.WriteLine("Import completed");
