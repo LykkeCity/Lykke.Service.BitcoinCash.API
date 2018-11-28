@@ -27,6 +27,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Wallet
         public async Task Subscribe(string address)
         {
             await _observableWalletRepository.Insert(ObservableWallet.Create(address));
+            await _blockChainProvider.ImportWatchOnlyAddress(address);
         }
 
         public async Task Unsubscribe(string address)

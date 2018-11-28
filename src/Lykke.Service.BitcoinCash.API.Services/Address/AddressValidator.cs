@@ -27,17 +27,17 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        private BitcoinAddress GetBitcoinAddress(string base58Date, Network network)
+        public BitcoinAddress GetBitcoinAddress(string address, Network network)
         {
             try
             {
-                return BitcoinAddress.Create(base58Date, network);
+                return BitcoinAddress.Create(address, network);
             }
             catch (Exception)
             {
                 try
                 {
-                    return new BitcoinColoredAddress(base58Date, network).Address;
+                    return new BitcoinColoredAddress(address, network).Address;
                 }
                 catch (Exception)
                 {
@@ -47,22 +47,23 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        public BitcoinAddress GetBitcoinAddress(string base58Data)
+        public BitcoinAddress GetBitcoinAddress(string address)
         {
+
             //eg moc231tgxApbRSwLNrc9ZbSVDktTRo3acK
-            var legacyAddress = GetBitcoinAddress(base58Data, _network);
+            var legacyAddress = GetBitcoinAddress(address, _network);
             if (legacyAddress != null)
                 return legacyAddress;
 
             //eg: bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
-            var canonicalAddress = GetBitcoinAddress(base58Data, _bcashNetwork);
+            var canonicalAddress = GetBitcoinAddress(address, _bcashNetwork);
 
             if (canonicalAddress != null)
                 return canonicalAddress;
 
             //eg qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
             var addressWithoutPrefix =
-                GetBitcoinAddress($"{GetAddressPrefix(_bcashNetwork)}:{base58Data?.Trim()}", _bcashNetwork);
+                GetBitcoinAddress($"{GetAddressPrefix(_bcashNetwork)}:{address?.Trim()}", _bcashNetwork);
 
             return addressWithoutPrefix;
         }

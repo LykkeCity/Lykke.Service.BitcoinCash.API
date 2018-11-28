@@ -1,4 +1,6 @@
-﻿using Autofac;
+﻿using System;
+using System.Net;
+using Autofac;
 using Autofac.Features.AttributeFilters;
 using BCashAddr;
 using Common.Log;
@@ -25,6 +27,7 @@ using Lykke.Service.BitcoinCash.API.Services.Wallet;
 using Lykke.SettingsReader;
 using NBitcoin;
 using NBitcoin.Altcoins;
+using NBitcoin.RPC;
 
 namespace Lykke.Service.BitcoinCash.API.Services.Binder
 {
@@ -57,12 +60,18 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
             BCash.Instance.EnsureRegistered();
             var network = Network.GetNetwork(_settings.CurrentValue.Network);
             builder.RegisterInstance(network).As<Network>();
+            
+            builder.RegisterInstance(GetBCashNetwork()).Keyed<Network>(Constants.BCashFilter);
+        }
 
-            var bcashNetwork = BCash.Instance.Regtest;
-            if (network == Network.Main)
-                bcashNetwork = BCash.Instance.Mainnet;
+        private Network GetBCashNetwork()
+        {
+            if (Network.GetNetwork(_settings.CurrentValue.Network) == Network.Main)
+            {
+                return BCash.Instance.Mainnet;
+            }
 
-            builder.RegisterInstance(bcashNetwork).Keyed<Network>(Constants.BCashFilter);
+            return BCash.Instance.Regtest;
         }
 
         private void RegisterFeeServices(ContainerBuilder builder)
@@ -86,8 +95,11 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private void RegisterInsightApiBlockChainReaders(ContainerBuilder builder)
         {
-            builder.RegisterInstance(new InsightApiSettings() { Url = _settings.CurrentValue.InsightApiUrl });
-            builder.RegisterType<InsightApiBlockChainProvider>().As<IBlockChainProvider>();
+            builder.RegisterType<RpcBlockchainProvider>().As<IBlockChainProvider>()
+                .WithParameter(TypedParameter.From(new RPCClient(
+                    new NetworkCredential(_settings.CurrentValue.Rpc.UserName, _settings.CurrentValue.Rpc.Password),
+                    new Uri(_settings.CurrentValue.Rpc.Host),
+                    GetBCashNetwork())));
         }
 
 

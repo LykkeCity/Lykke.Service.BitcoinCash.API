@@ -50,10 +50,11 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
                 throw new BusinessException($"Wallet {wallet.Address} already exist", ErrorCode.EntityAlreadyExist);
         }
 
-        public async Task<(IEnumerable<IObservableWallet>, string ContinuationToken)> GetAll(int take, string continuationToken)
+        public async Task<(IEnumerable<IObservableWallet> items, string ContinuationToken)> GetAll(int take, string continuationToken)
         {
             return await _storage.GetDataWithContinuationTokenAsync(take, continuationToken);
         }
+        
 
         public async Task Delete(string address)
         {

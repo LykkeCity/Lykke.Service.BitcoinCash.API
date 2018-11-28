@@ -5,9 +5,10 @@ using NBitcoin;
 namespace Lykke.Service.BitcoinCash.API.Core.BlockChainReaders
 {
     public interface IBlockChainProvider
-    {        
+    {
         Task BroadCastTransaction(Transaction tx);
         Task<int> GetTxConfirmationCount(string txHash);
+        Task ImportWatchOnlyAddress(string address);
         Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount);        
         Task<long> GetBalanceSatoshiFromUnspentOutputs(string address, int minConfirmationCount);
         Task<int> GetLastBlockHeight();

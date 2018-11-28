@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Common;
+using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
 using Lykke.Service.BitcoinCash.API.Core.Transactions;
@@ -17,15 +18,17 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
         private readonly IOperationMetaRepository _operationMetaRepository;
         private readonly ITransactionBlobStorage _transactionBlobStorage;
         private readonly Network _network;
+        private readonly IBlockChainProvider _blockChainProvider;
 
         public OperationService(ITransactionBuilderService transactionBuilder,
             IOperationMetaRepository operationMetaRepository,
-            ITransactionBlobStorage transactionBlobStorage, Network network)
+            ITransactionBlobStorage transactionBlobStorage, Network network, IBlockChainProvider blockChainProvider)
         {
             _transactionBuilder = transactionBuilder;
             _operationMetaRepository = operationMetaRepository;
             _transactionBlobStorage = transactionBlobStorage;
             _network = network;
+            _blockChainProvider = blockChainProvider;
         }
 
         public async Task<BuildedTransactionInfo> GetOrBuildTransferTransaction(Guid operationId,
@@ -51,6 +54,8 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
 
                 return await GetExistingTransaction(existingOperation.OperationId, existingOperation.Hash);
             }
+
+            await _blockChainProvider.ImportWatchOnlyAddress(fromAddress.ToString());
 
             var buildedTransaction = await _transactionBuilder.GetTransferTransaction(fromAddress, toAddress, amountToSend, includeFee);
 

@@ -7,9 +7,6 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
         public DbSettings Db { get; set; }
         public string Network { get; set; }
 
-        [HttpCheck("status")]
-        public string InsightApiUrl { get; set; }
-
         [Optional]
         public int FeePerByte { get; set; } = 1;
 
@@ -23,5 +20,9 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
 
         [Optional]
         public double SpentOutputsExpirationDays { get; set; } = 7;
+
+        public RpcClientSettings Rpc { get; set; }
+		
+        public string AssetId { get; set; }
     }
 }
