@@ -8,6 +8,7 @@ using Lykke.Common.Log;
 using Lykke.Logs;
 using Lykke.Logs.Loggers.LykkeConsole;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet;
+using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Settings;
 using Lykke.Service.BitcoinCash.API.Services.Address;
 using Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi;
@@ -101,22 +102,29 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                 settings.Nested(p => p.Db.DataConnString),
                 "ObservableWallets", logFactory));
             
-            Console.WriteLine("Retrieving wallets");
-
-            var allWallets = await observableWalletRepository.GetAll();
-
-            var addressesToImport = allWallets.Select(p => p.Address).Union(new [] { hotwallet }).ToList();
-            
-            var total = addressesToImport.Count;
-
             var counter = 0;
-            foreach (var addr in addressesToImport)
-            {
-                await bcProvider.ImportWatchOnlyAddress(addr);
 
-                counter++;
-                Console.WriteLine($"{counter} of {total} imported -- {addr}");
-            }
+
+
+            await bcProvider.ImportWatchOnlyAddress(hotwallet);
+
+            Console.WriteLine("Hot wallet imported");
+
+            string continuation = null;
+            do
+            {
+                var batchResult = await observableWalletRepository.GetAll(100, continuation);
+
+                continuation = batchResult.ContinuationToken;
+
+                foreach (var addr in batchResult.items)
+                {
+                    await bcProvider.ImportWatchOnlyAddress(addr.Address);
+
+                    counter++;
+                    Console.WriteLine($"{counter} imported -- {addr.Address}");
+                }
+            } while (!string.IsNullOrEmpty(continuation));
 
             Console.WriteLine("Import completed");
         }
