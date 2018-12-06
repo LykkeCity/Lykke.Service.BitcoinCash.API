@@ -6,6 +6,5 @@ namespace Lykke.Service.BitcoinCash.API.Core.Address
     {
         bool IsValid(string address);
         BitcoinAddress GetBitcoinAddress(string address);
-        BitcoinAddress GetBitcoinAddress(string address, Network network);
     }
 }

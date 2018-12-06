@@ -47,12 +47,12 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         public Task ImportWatchOnlyAddress(string address)
         {
-            return _client.ImportAddressAsync(_addressValidator.GetBitcoinAddress(address, _client.Network));
+            return _client.ImportAddressAsync(_addressValidator.GetBitcoinAddress(address));
         }
 
         public async Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
         {
-            var rpcResponce = await _client.ListUnspentAsync(minConfirmationCount, int.MaxValue, _addressValidator.GetBitcoinAddress(address, _client.Network));
+            var rpcResponce = await _client.ListUnspentAsync(minConfirmationCount, int.MaxValue, _addressValidator.GetBitcoinAddress(address));
 
             return rpcResponce.Select(p => new Coin(p.OutPoint, new TxOut(p.Amount, p.ScriptPubKey))).ToList();
         }
