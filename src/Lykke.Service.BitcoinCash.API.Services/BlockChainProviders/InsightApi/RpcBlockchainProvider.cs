@@ -54,7 +54,8 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
                 throw new ArgumentException("Unable to recognize address", nameof(address));
             }
 
-            return _client.ImportAddressAsync(btcAddr);
+
+            return _client.ImportAddressAsync(btcAddr, btcAddr.ToString(), rescan: false);
         }
 
         public async Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
