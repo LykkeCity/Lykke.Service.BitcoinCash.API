@@ -27,7 +27,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        public BitcoinAddress GetBitcoinAddress(string address, Network network)
+        private BitcoinAddress GetBitcoinAddress(string address, Network network)
         {
             try
             {
