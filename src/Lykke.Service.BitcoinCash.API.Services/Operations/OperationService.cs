@@ -54,9 +54,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Operations
 
                 return await GetExistingTransaction(existingOperation.OperationId, existingOperation.Hash);
             }
-
-            await _blockChainProvider.ImportWatchOnlyAddress(fromAddress.ToString());
-
+            
             var buildedTransaction = await _transactionBuilder.GetTransferTransaction(fromAddress, toAddress, amountToSend, includeFee);
 
             var buildedTransactionInfo = new BuildedTransactionInfo
