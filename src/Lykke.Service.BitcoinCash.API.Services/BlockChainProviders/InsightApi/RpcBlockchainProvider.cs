@@ -47,12 +47,27 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         public Task ImportWatchOnlyAddress(string address)
         {
-            return _client.ImportAddressAsync(_addressValidator.GetBitcoinAddress(address, _client.Network));
+            var btcAddr = _addressValidator.GetBitcoinAddress(address);
+
+            if (btcAddr == null)
+            {
+                throw new ArgumentException("Unable to recognize address", nameof(address));
+            }
+
+
+            return _client.ImportAddressAsync(btcAddr, btcAddr.ToString(), rescan: false);
         }
 
         public async Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
         {
-            var rpcResponce = await _client.ListUnspentAsync(minConfirmationCount, int.MaxValue, _addressValidator.GetBitcoinAddress(address, _client.Network));
+            var btcAddr = _addressValidator.GetBitcoinAddress(address);
+
+            if (btcAddr == null)
+            {
+                throw new ArgumentException("Unable to recognize address", nameof(address));
+            }
+
+            var rpcResponce = await _client.ListUnspentAsync(minConfirmationCount, int.MaxValue, btcAddr);
 
             return rpcResponce.Select(p => new Coin(p.OutPoint, new TxOut(p.Amount, p.ScriptPubKey))).ToList();
         }
