@@ -27,6 +27,7 @@ namespace Lykke.Service.BitcoinCash.API.Core.Wallet
     {
         Task Insert(IObservableWallet wallet);
         Task<(IEnumerable<IObservableWallet> items, string ContinuationToken)> GetAll(int take, string continuationToken);
+        Task<IEnumerable<IObservableWallet>> GetAll();
         Task Delete(string address);
         Task<IObservableWallet> Get(string address);
     }
