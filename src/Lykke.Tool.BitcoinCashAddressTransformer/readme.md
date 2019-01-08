@@ -3,6 +3,6 @@ Converts observable addresses from obsolete bitcoin format to bitcoin cash forma
 https://cashaddr.bitcoincash.org/
 
 ## Usage
-`dotnet run Lykke.Tool.BitcoinCashAddressTransformer.dll <bitcoincashapi settings url>
+dotnet run Lykke.Tool.BitcoinCashAddressTransformer.dll bitcoincashapi-settings-url
 
 

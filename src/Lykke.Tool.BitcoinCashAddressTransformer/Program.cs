@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using AzureStorage.Tables;
 using Lykke.Logs;
@@ -9,10 +10,14 @@ using Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet;
 using Lykke.Service.BitcoinCash.API.Core.Settings;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
 using Lykke.Service.BitcoinCash.API.Services.Address;
+using Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi;
+using Lykke.Service.BitcoinCash.API.Services.Operations;
+using Lykke.Service.BitcoinCash.API.Services.Wallet;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.CommandLineUtils;
 using NBitcoin;
 using NBitcoin.Altcoins;
+using NBitcoin.RPC;
 
 namespace Lykke.Tool.BitcoinCashAddressTransformer
 {
@@ -98,6 +103,19 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 settings.Nested(p => p.Db.DataConnString),
                 backupTableName, logFactory));
 
+            var bcProvider = new RpcBlockchainProvider(new RPCClient(
+                new NetworkCredential(settings.CurrentValue.Rpc.UserName, settings.CurrentValue.Rpc.Password),
+                new Uri(settings.CurrentValue.Rpc.Host),
+                bcashNetwork), addressValidator, logFactory.CreateLog("temp"));
+
+            var walletBalanceService = new WalletBalanceService(walletBalanceRepo,
+                observableWalletRepository,
+                bcProvider,
+                new OperationsConfirmationsSettings
+                {
+                    MinConfirmationsToDetectOperation = settings.CurrentValue.MinConfirmationsToDetectOperation
+                });
+
             Console.WriteLine("Retrieving observable wallets");
 
             var observableWallets = (await observableWalletRepository.GetAll()).ToList();
@@ -162,6 +180,15 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 await observableWalletBackupRepository.Insert(ObservableWallet.Create(newAddress));
             }
 
+            var updatingBalanceProgress = 0;
+            Console.WriteLine("Updating wallet balanceTable");
+            foreach (var newAddr in observableWallets.Select(p => obserwabletWalletsTransformation[p.Address]))
+            {
+                updatingBalanceProgress++;
+                Console.WriteLine($"Updating balance {newAddr}-- {updatingBalanceProgress} of {observableWallets.Count}");
+
+                await walletBalanceService.UpdateBalance(newAddr);
+            }
 
             Console.WriteLine("All done!");
         }
