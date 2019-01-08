@@ -80,7 +80,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             application.Execute(args);
         }
 
-        private static async Task Import(string settingsUrl, string hotwallet, string timestamp, int batchSize)
+        private static async Task Import(string settingsUrl, string hotwallet, string timestamp, string batchSize)
         {
             if (!Uri.TryCreate(settingsUrl, UriKind.Absolute, out _))
             {
@@ -100,6 +100,13 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             if (!DateTime.TryParse(timestamp, out timeStampTyped))
             {
                 Console.WriteLine($"{Timestamp}: {timestamp} should be a valid Date time ");
+
+                return;
+            }
+
+            if (!int.TryParse(batchSize, out var batchSizeTyped))
+            {
+                Console.WriteLine($"{BatchSize}: {batchSize} should be a valid integer ");
 
                 return;
             }
@@ -145,7 +152,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
 
             int batchNum = 1;
 
-            foreach (var batch in walletsToImport.Batch(batchSize))
+            foreach (var batch in walletsToImport.Batch(batchSizeTyped))
             {
                 Console.WriteLine($"{DateTime.UtcNow} Importing batch {batchNum++}...");
 
