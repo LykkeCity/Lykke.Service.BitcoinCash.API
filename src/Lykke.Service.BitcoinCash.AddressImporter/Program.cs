@@ -11,6 +11,7 @@ using Lykke.Service.BitcoinCash.API.Core.Settings;
 using Lykke.Service.BitcoinCash.API.Services.Address;
 using Lykke.SettingsReader;
 using Microsoft.Extensions.CommandLineUtils;
+using MoreLinq;
 using NBitcoin;
 using NBitcoin.Altcoins;
 using NBitcoin.RPC;
@@ -22,6 +23,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
         private const string SettingsUrl = "settingsUrl";
         private const string HotWallet = "hotWallet";
         private const string Timestamp = "timestamp";
+        private const string BatchSize = "batchSize";
 
         static void Main(string[] args)
         {
@@ -37,6 +39,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                 { Timestamp, application.Argument(Timestamp, "Date time (ISO format) of oldest address creation. " +
                                                              "The timestamp of the oldest key will determine how far back blockchain rescans need " +
                                                              "to begin for missing wallet transactions.") },
+                { BatchSize, application.Argument(BatchSize, "Size of the addresses batch") }
             };
 
             application.HelpOption("-? | -h | --help");
@@ -56,8 +59,9 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
 
                             arguments[HotWallet].Value,
 
-                            arguments[Timestamp].Value
+                            arguments[Timestamp].Value,
 
+                            arguments[BatchSize].Value
                         );
                     }
 
@@ -76,7 +80,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             application.Execute(args);
         }
 
-        private static async Task Import(string settingsUrl, string hotwallet, string timestamp)
+        private static async Task Import(string settingsUrl, string hotwallet, string timestamp, string batchSize)
         {
             if (!Uri.TryCreate(settingsUrl, UriKind.Absolute, out _))
             {
@@ -96,6 +100,13 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             if (!DateTime.TryParse(timestamp, out timeStampTyped))
             {
                 Console.WriteLine($"{Timestamp}: {timestamp} should be a valid Date time ");
+
+                return;
+            }
+
+            if (!int.TryParse(batchSize, out var batchSizeTyped))
+            {
+                Console.WriteLine($"{BatchSize}: {batchSize} should be a valid integer ");
 
                 return;
             }
@@ -123,7 +134,6 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                 new NetworkCredential(settings.CurrentValue.Rpc.UserName, settings.CurrentValue.Rpc.Password),
                 new Uri(settings.CurrentValue.Rpc.Host),
                 bcashNetwork);
-
             
             var observableWalletRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
@@ -140,11 +150,20 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
 
             Console.WriteLine($"Importing {walletsToImport.Count} addresses in node started at {DateTime.UtcNow}. Timestamp {timeStampTyped}");
 
-            await rpcClient.ImportMultiAsync(walletsToImport.Select(addr => new ImportMultiAddress
+            int batchNum = 1;
+
+            foreach (var batch in walletsToImport.Batch(batchSizeTyped))
             {
-                ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(addr),
-                Timestamp = new DateTimeOffset(timeStampTyped)
-            }).ToArray(), rescan: true);
+                Console.WriteLine($"{DateTime.UtcNow} Importing batch {batchNum++}...");
+
+                await rpcClient.ImportMultiAsync(batch.Select(addr => new ImportMultiAddress
+                {
+                    ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(addr),
+                    Timestamp = new DateTimeOffset(timeStampTyped)
+                }).ToArray(), rescan: true);
+
+                Console.WriteLine($"{DateTime.UtcNow} Batch imported");
+            }
 
             Console.WriteLine($"Import completed at {DateTime.UtcNow}");
         }
