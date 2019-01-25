@@ -122,14 +122,25 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
 
             var obserwabletWalletsTransformation = observableWallets.ToDictionary(observableWallet=>observableWallet.Address, observableWallet =>
             {
-                var newAddress = addressValidator.GetBitcoinAddress(observableWallet.Address);
+                var addr = addressValidator.GetBitcoinAddress(observableWallet.Address);
 
-                if (newAddress == null)
+                if (addr == null)
                 {
                     throw new ArgumentException($"Unable to recognize address {observableWallet.Address}", nameof(observableWallet.Address));
                 }
 
-                return newAddress.ScriptPubKey.GetDestinationAddress(bcashNetwork).ToString();
+                var oldAdrr = addr.ScriptPubKey.GetDestinationAddress(network).ToString();
+                var newAddr = addr.ScriptPubKey.GetDestinationAddress(bcashNetwork).ToString();
+
+                if (!string.Equals(observableWallet.Address, oldAdrr, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var prevColor = Console.ForegroundColor;
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine($"{observableWallet.Address} not in obsolete format. Old format: {oldAdrr} | New Format {newAddr}");
+                    Console.ForegroundColor = prevColor;
+                }
+
+                return newAddr;
             });
 
             var backupProgressCounter = 0;
@@ -149,7 +160,7 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
             foreach (var observableWallet in observableWallets)
             {
                 flushingProgress++;
-                Console.WriteLine($"Deleting wallet balance record -- {flushingProgress} of {observableWallets.Count}");
+                Console.WriteLine($"Deleting wallet balance record {observableWallet.Address} -- {flushingProgress} of {observableWallets.Count}");
 
                 await walletBalanceRepo.DeleteIfExist(observableWallet.Address);
             }
