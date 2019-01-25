@@ -68,6 +68,16 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
             return addressWithoutPrefix;
         }
 
+        public Network GetObsoleteNetwork()
+        {
+            return _network;
+        }
+
+        public Network GetBcashNetwork()
+        {
+            return _bcashNetwork;
+        }
+
         private static string GetAddressPrefix(Network bcashNetwork)
         {
             if (bcashNetwork == BCash.Instance.Mainnet)
