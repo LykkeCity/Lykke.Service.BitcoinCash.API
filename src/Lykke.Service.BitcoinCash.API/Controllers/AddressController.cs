@@ -40,9 +40,9 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             var addr = _addressValidator.GetBitcoinAddress(address);
             return Ok(new 
             {
-                IsValid = addr!=null,
-                BCashFormat = addr!= null ? addr.ScriptPubKey.GetDestinationAddress(_addressValidator.GetBcashNetwork()).ToString() : null,
-                ObsoleteFormat = addr != null ? addr.ScriptPubKey.GetDestinationAddress(_addressValidator.GetObsoleteNetwork()).ToString() : null
+                isValid = addr!=null,
+                bCashFormat = addr!= null ? addr.ScriptPubKey.GetDestinationAddress(_addressValidator.GetBcashNetwork()).ToString() : null,
+                obsoleteFormat = addr != null ? addr.ScriptPubKey.GetDestinationAddress(_addressValidator.GetObsoleteNetwork()).ToString() : null
             });
         }
     }
