@@ -174,7 +174,7 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 removingProgress++;
                 Console.WriteLine($"Deleting observable wallet record -- {removingProgress} of {observableWallets.Count}");
 
-                await observableWalletBackupRepository.Delete(observableWallet.Address);
+                await observableWalletRepository.Delete(observableWallet.Address);
             }
 
             var refillingProgress = 0;
@@ -188,7 +188,7 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 Console.WriteLine($"Inserting obserwablewallet record {observableWallet.Address} => {newAddress} " +
                                   $"-- {refillingProgress} of {observableWallets.Count}");
 
-                await observableWalletBackupRepository.Insert(ObservableWallet.Create(newAddress));
+                await observableWalletRepository.Insert(ObservableWallet.Create(newAddress));
             }
 
             var updatingBalanceProgress = 0;
