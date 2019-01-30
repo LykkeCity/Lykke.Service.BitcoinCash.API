@@ -90,7 +90,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
                 tx = await _operationService.GetOrBuildTransferTransaction(request.OperationId, fromBitcoinAddress, toBitcoinAddress,
                     request.AssetId, new Money(amountSatoshi), request.IncludeFee);
             }
-            catch (Exception)
+            catch (NotEnoughFundsException)
             {
                 return BadRequest(BlockchainErrorResponse.FromKnownError(BlockchainErrorCode.NotEnoughBalance));
             }
