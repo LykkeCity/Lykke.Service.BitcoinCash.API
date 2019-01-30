@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.Broadcast;
-using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
+using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using Lykke.Service.BitcoinCash.API.Helpers;
+using Lykke.Service.BlockchainApi.Contract;
 using Lykke.Service.BlockchainApi.Contract.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -44,7 +44,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         [HttpPost("api/transactions/single")]
         [ProducesResponseType(typeof(BuildTransactionResponse), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
-        public async Task<BuildTransactionResponse> BuildSingle([FromBody] BuildSingleTransactionRequest request)
+        public async Task<ActionResult> BuildSingle([FromBody] BuildSingleTransactionRequest request)
         {
             if (request == null)
             {
@@ -84,15 +84,21 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             }
 
 
-            var tx = await _operationService.GetOrBuildTransferTransaction(request.OperationId, fromBitcoinAddress, toBitcoinAddress,
-                request.AssetId, new Money(amountSatoshi), request.IncludeFee);
+            BuildedTransactionInfo tx;
+            try
+            {
+                tx = await _operationService.GetOrBuildTransferTransaction(request.OperationId, fromBitcoinAddress, toBitcoinAddress,
+                    request.AssetId, new Money(amountSatoshi), request.IncludeFee);
+            }
+            catch (Exception)
+            {
+                return BadRequest(BlockchainErrorResponse.FromKnownError(BlockchainErrorCode.NotEnoughBalance));
+            }
 
-
-
-            return new BuildTransactionResponse
+            return Ok(new BuildTransactionResponse
             {
                 TransactionContext = tx.ToJson(_network)
-            };
+            });
         }
 
         [HttpPost("api/transactions/broadcast")]
