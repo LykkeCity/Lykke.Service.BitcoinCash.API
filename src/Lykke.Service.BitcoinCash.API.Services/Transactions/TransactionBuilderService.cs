@@ -89,8 +89,6 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
             
             if (includeFee)
             {
-                if (calculatedFee > amount)
-                    throw new BusinessException($"The sum of total applicable outputs is less than the required fee:{calculatedFee} satoshis.", ErrorCode.BalanceIsLessThanFee);
                 builder.SubtractFees();
                 amount = amount - calculatedFee;
             }
