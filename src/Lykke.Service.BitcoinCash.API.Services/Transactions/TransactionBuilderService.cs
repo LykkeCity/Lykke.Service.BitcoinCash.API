@@ -82,11 +82,10 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 sentFees = change;
             }
 
-            var calculatedFee = await _feeService.CalcFeeForTransaction(builder) - sentFees;
-
             builder.Send(destination, amount)
                 .SetChange(changeDestination);
-            
+
+            var calculatedFee = await _feeService.CalcFeeForTransaction(builder) - sentFees;
             if (includeFee)
             {
                 if (calculatedFee > amount)
@@ -95,13 +94,12 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 amount = amount - calculatedFee;
             }
 
-
             if (calculatedFee > 0)
                 builder.SendFees(calculatedFee);
 
             var tx = builder.BuildTransaction(false);
             var usedCoins = tx.Inputs.Select(input => coins.First(o => o.Outpoint == input.PrevOut)).ToList();
-
+            
             return BuildedTransaction.Create(tx, calculatedFee, amount, usedCoins);
         }
     }
