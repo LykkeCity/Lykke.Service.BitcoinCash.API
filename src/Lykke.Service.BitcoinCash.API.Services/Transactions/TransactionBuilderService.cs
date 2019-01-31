@@ -80,16 +80,14 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 sentFees = change;
             }
 
+            builder.Send(destination, amount)
+                .SetChange(changeDestination);
+
             var calculatedFee = await _feeService.CalcFeeForTransaction(builder) - sentFees;
             var requiredBalance = amount + (includeFee ? Money.Zero : calculatedFee);
             if (balance < requiredBalance)
                 throw new BusinessException($"The sum of total applicable outputs is less than the required : {requiredBalance} satoshis.", ErrorCode.NotEnoughFundsAvailable);
-
-
-            builder.Send(destination, amount)
-                .SetChange(changeDestination);
             
-
             if (includeFee)
             {
                 if (calculatedFee > amount)
