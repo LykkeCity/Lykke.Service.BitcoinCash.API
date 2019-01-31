@@ -73,9 +73,15 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                    .SetChange(changeDestination);
 
             var calculatedFee = await _feeService.CalcFeeForTransaction(builder);
-            
+            var requiredBalance = amount + (includeFee ? Money.Zero : calculatedFee);
+
+            if (balance < requiredBalance)
+                throw new BusinessException($"The sum of total applicable outputs is less than the required : {requiredBalance} satoshis.", ErrorCode.NotEnoughFundsAvailable);
+
             if (includeFee)
             {
+                if (calculatedFee > amount)
+                    throw new BusinessException($"The sum of total applicable outputs is less than the required fee:{calculatedFee} satoshis.", ErrorCode.BalanceIsLessThanFee);
                 builder.SubtractFees();
                 amount = amount - calculatedFee;
             }
