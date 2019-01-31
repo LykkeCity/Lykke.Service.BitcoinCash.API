@@ -69,9 +69,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 throw new BusinessException("Amount can't be less or equal to zero", ErrorCode.BadInputParameter);
 
             builder.AddCoins(coins);
-
-
-
+            
             var addressBalance = coins.Sum(o => o.Amount);
             var sentFees = Money.Zero;
 
@@ -83,12 +81,19 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
             }
 
             var calculatedFee = await _feeService.CalcFeeForTransaction(builder) - sentFees;
+            var requiredBalance = amount + (includeFee ? Money.Zero : calculatedFee);
+            if (balance < requiredBalance)
+                throw new BusinessException($"The sum of total applicable outputs is less than the required : {requiredBalance} satoshis.", ErrorCode.NotEnoughFundsAvailable);
+
 
             builder.Send(destination, amount)
                 .SetChange(changeDestination);
             
+
             if (includeFee)
             {
+                if (calculatedFee > amount)
+                    throw new BusinessException($"The sum of total applicable outputs is less than the required fee:{calculatedFee} satoshis.", ErrorCode.BalanceIsLessThanFee);
                 builder.SubtractFees();
                 amount = amount - calculatedFee;
             }
