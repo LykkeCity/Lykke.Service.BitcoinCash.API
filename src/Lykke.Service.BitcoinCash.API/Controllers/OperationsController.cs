@@ -26,12 +26,16 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         private readonly IObservableOperationService _observableOperationService;
         private readonly Network _network;
         private readonly IAssetRepository _assetRepository;
+        private readonly IOperationEventRepository _operationEventRepository;
 
 
         public OperationsController(IOperationService operationService,
             IAddressValidator addressValidator,
             IBroadcastService broadcastService,
-            IObservableOperationService observableOperationService, Network network, IAssetRepository assetRepository)
+            IObservableOperationService observableOperationService, 
+            Network network,
+            IAssetRepository assetRepository,
+            IOperationEventRepository operationEventRepository)
         {
             _operationService = operationService;
             _addressValidator = addressValidator;
@@ -39,6 +43,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             _observableOperationService = observableOperationService;
             _network = network;
             _assetRepository = assetRepository;
+            _operationEventRepository = operationEventRepository;
         }
 
         [HttpPost("api/transactions/single")]
@@ -83,6 +88,10 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
                 throw new BusinessException("Invalid operation id (GUID)", ErrorCode.BadInputParameter);
             }
 
+            if (await _operationEventRepository.Exist(request.OperationId, OperationEventType.Broadcasted))
+            {
+                return Conflict();
+            }
 
             BuildedTransactionInfo tx;
             try
