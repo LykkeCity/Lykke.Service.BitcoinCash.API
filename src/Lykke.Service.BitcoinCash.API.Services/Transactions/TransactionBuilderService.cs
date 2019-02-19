@@ -68,16 +68,24 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
             if (amount.Satoshi <= 0)
                 throw new BusinessException("Amount can't be less or equal to zero", ErrorCode.BadInputParameter);
 
-            builder.AddCoins(coins)
-                   .Send(destination, amount)
-                   .SetChange(changeDestination);
+            builder.AddCoins(coins);
 
-            var calculatedFee = await _feeService.CalcFeeForTransaction(builder);
-            var requiredBalance = amount + (includeFee ? Money.Zero : calculatedFee);
 
-            if (balance < requiredBalance)
-                throw new BusinessException($"The sum of total applicable outputs is less than the required : {requiredBalance} satoshis.", ErrorCode.NotEnoughFundsAvailable);
 
+            var addressBalance = coins.Sum(o => o.Amount);
+            var sentFees = Money.Zero;
+
+            var change = addressBalance - amount;
+            if (change < new TxOut(Money.Zero, destination).GetDustThreshold(builder.StandardTransactionPolicy.MinRelayTxFee).Satoshi)
+            {
+                builder.SendFees(change);
+                sentFees = change;
+            }
+
+            builder.Send(destination, amount)
+                .SetChange(changeDestination);
+
+            var calculatedFee = await _feeService.CalcFeeForTransaction(builder) - sentFees;
             if (includeFee)
             {
                 if (calculatedFee > amount)
@@ -86,11 +94,12 @@ namespace Lykke.Service.BitcoinCash.API.Services.Transactions
                 amount = amount - calculatedFee;
             }
 
-            builder.SendFees(calculatedFee);
+            if (calculatedFee > 0)
+                builder.SendFees(calculatedFee);
 
             var tx = builder.BuildTransaction(false);
             var usedCoins = tx.Inputs.Select(input => coins.First(o => o.Outpoint == input.PrevOut)).ToList();
-
+            
             return BuildedTransaction.Create(tx, calculatedFee, amount, usedCoins);
         }
     }
