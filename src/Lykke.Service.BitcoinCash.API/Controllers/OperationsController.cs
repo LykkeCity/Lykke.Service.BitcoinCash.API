@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Net;
 using System.Threading.Tasks;
-using Common;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.Asset;
 using Lykke.Service.BitcoinCash.API.Core.Broadcast;
-using Lykke.Service.BitcoinCash.API.Core.Constants;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
 using Lykke.Service.BitcoinCash.API.Core.Operation;
+using Lykke.Service.BitcoinCash.API.Core.Transactions;
 using Lykke.Service.BitcoinCash.API.Helpers;
+using Lykke.Service.BlockchainApi.Contract;
 using Lykke.Service.BlockchainApi.Contract.Transactions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -26,12 +26,16 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
         private readonly IObservableOperationService _observableOperationService;
         private readonly Network _network;
         private readonly IAssetRepository _assetRepository;
+        private readonly IOperationEventRepository _operationEventRepository;
 
 
         public OperationsController(IOperationService operationService,
             IAddressValidator addressValidator,
             IBroadcastService broadcastService,
-            IObservableOperationService observableOperationService, Network network, IAssetRepository assetRepository)
+            IObservableOperationService observableOperationService, 
+            Network network,
+            IAssetRepository assetRepository,
+            IOperationEventRepository operationEventRepository)
         {
             _operationService = operationService;
             _addressValidator = addressValidator;
@@ -39,12 +43,13 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             _observableOperationService = observableOperationService;
             _network = network;
             _assetRepository = assetRepository;
+            _operationEventRepository = operationEventRepository;
         }
 
         [HttpPost("api/transactions/single")]
         [ProducesResponseType(typeof(BuildTransactionResponse), 200)]
         [ProducesResponseType(typeof(ErrorResponse), 400)]
-        public async Task<BuildTransactionResponse> BuildSingle([FromBody] BuildSingleTransactionRequest request)
+        public async Task<ActionResult> BuildSingle([FromBody] BuildSingleTransactionRequest request)
         {
             if (request == null)
             {
@@ -83,16 +88,30 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
                 throw new BusinessException("Invalid operation id (GUID)", ErrorCode.BadInputParameter);
             }
 
+            if (await _operationEventRepository.Exist(request.OperationId, OperationEventType.Broadcasted))
+            {
+                return Conflict();
+            }
 
-            var tx = await _operationService.GetOrBuildTransferTransaction(request.OperationId, fromBitcoinAddress, toBitcoinAddress,
-                request.AssetId, new Money(amountSatoshi), request.IncludeFee);
+            BuildedTransactionInfo tx;
+            try
+            {
+                tx = await _operationService.GetOrBuildTransferTransaction(request.OperationId, fromBitcoinAddress, toBitcoinAddress,
+                    request.AssetId, new Money(amountSatoshi), request.IncludeFee);
+            }
+            catch (NotEnoughFundsException)
+            {
+                return BadRequest(BlockchainErrorResponse.FromKnownError(BlockchainErrorCode.NotEnoughBalance));
+            }
+            catch (BusinessException e) when (e.Code == ErrorCode.NotEnoughFundsAvailable)
+            {
+                return BadRequest(BlockchainErrorResponse.FromKnownError(BlockchainErrorCode.NotEnoughBalance));
+            }
 
-
-
-            return new BuildTransactionResponse
+            return Ok(new BuildTransactionResponse
             {
                 TransactionContext = tx.ToJson(_network)
-            };
+            });
         }
 
         [HttpPost("api/transactions/broadcast")]
