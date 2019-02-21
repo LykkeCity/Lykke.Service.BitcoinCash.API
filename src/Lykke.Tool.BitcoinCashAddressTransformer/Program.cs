@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using AzureStorage.Tables;
 using Lykke.Logs;
 using Lykke.Logs.Loggers.LykkeConsole;
 using Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet;
+using Lykke.Service.BitcoinCash.API.Core.Helpers;
 using Lykke.Service.BitcoinCash.API.Core.Settings;
 using Lykke.Service.BitcoinCash.API.Core.Wallet;
 using Lykke.Service.BitcoinCash.API.Services.Address;
@@ -145,61 +147,56 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
 
             var backupProgressCounter = 0;
             Console.WriteLine($"Starting {observableWallets.Count} observable wallets backup to {backupTableName} table");
-
-            foreach (var observableWallet in observableWallets)
+            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                backupProgressCounter++;
+                Interlocked.Increment(ref backupProgressCounter);
                 Console.WriteLine($"Backup {observableWallet.Address} -- {backupProgressCounter} of {observableWallets.Count}");
 
                 await observableWalletBackupRepository.Insert(observableWallet);
-            }
+            });
 
             var flushingProgress = 0;
             Console.WriteLine("Flushing balance table");
-
-            foreach (var observableWallet in observableWallets)
+            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                flushingProgress++;
+                Interlocked.Increment(ref flushingProgress);
                 Console.WriteLine($"Deleting wallet balance record {observableWallet.Address} -- {flushingProgress} of {observableWallets.Count}");
 
                 await walletBalanceRepo.DeleteIfExist(observableWallet.Address);
-            }
-
+            });
 
             var removingProgress = 0;
             Console.WriteLine("Clearing table ObservableWallets");
-
-            foreach (var observableWallet in observableWallets)
+            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                removingProgress++;
+                Interlocked.Increment(ref removingProgress);
                 Console.WriteLine($"Deleting observable wallet record -- {removingProgress} of {observableWallets.Count}");
 
                 await observableWalletRepository.Delete(observableWallet.Address);
-            }
+            });
 
             var refillingProgress = 0;
             Console.WriteLine("Refilling table ObservableWallets");
-
-            foreach (var observableWallet in observableWallets)
+            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                refillingProgress++;
+                Interlocked.Increment(ref refillingProgress);
                 var newAddress = obserwabletWalletsTransformation[observableWallet.Address];
 
                 Console.WriteLine($"Inserting obserwablewallet record {observableWallet.Address} => {newAddress} " +
                                   $"-- {refillingProgress} of {observableWallets.Count}");
 
                 await observableWalletRepository.Insert(ObservableWallet.Create(newAddress));
-            }
+            });
 
             var updatingBalanceProgress = 0;
             Console.WriteLine("Updating wallet balanceTable");
-            foreach (var newAddr in observableWallets.Select(p => obserwabletWalletsTransformation[p.Address]))
+            await observableWallets.Select(p => obserwabletWalletsTransformation[p.Address]).ForEachAsyncSemaphore(8, async newAddr =>
             {
-                updatingBalanceProgress++;
+                Interlocked.Increment(ref updatingBalanceProgress);
                 Console.WriteLine($"Updating balance {newAddr}-- {updatingBalanceProgress} of {observableWallets.Count}");
 
                 await walletBalanceService.UpdateBalance(newAddr);
-            }
+            });
 
             Console.WriteLine("All done!");
         }
