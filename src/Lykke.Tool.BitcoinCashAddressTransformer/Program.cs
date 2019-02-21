@@ -88,30 +88,28 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
             BCash.Instance.EnsureRegistered();
             var network = Network.GetNetwork(settings.CurrentValue.Network);
             var bcashNetwork = network == Network.Main ? BCash.Instance.Mainnet : BCash.Instance.Regtest;
-
-
+            
             var addressValidator = new AddressValidator(network, bcashNetwork);
 
             var observableWalletRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
                 "ObservableWallets", logFactory));
 
-            var walletBalanceRepo = new WalletBalanceRepository(
-                AzureTableStorage<WalletBalanceEntity>.Create(settings.Nested(p => p.Db.DataConnString),
-                    "WalletBalances", logFactory));
-
-            var backupTableName = "ObservableWalletsBackup" + DateTime.UtcNow.UnixTimestamp();
-            var observableWalletBackupRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
+            var observableWalletV2Repository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
-                backupTableName, logFactory));
+                "ObservableWalletsV2", logFactory));
+
+            var walletBalanceV2Repo = new WalletBalanceRepository(
+                AzureTableStorage<WalletBalanceEntity>.Create(settings.Nested(p => p.Db.DataConnString),
+                    "WalletBalancesV2", logFactory));
 
             var bcProvider = new RpcBlockchainProvider(new RPCClient(
                 new NetworkCredential(settings.CurrentValue.Rpc.UserName, settings.CurrentValue.Rpc.Password),
                 new Uri(settings.CurrentValue.Rpc.Host),
                 bcashNetwork), addressValidator, logFactory.CreateLog("temp"));
 
-            var walletBalanceService = new WalletBalanceService(walletBalanceRepo,
-                observableWalletRepository,
+            var walletBalanceService = new WalletBalanceService(walletBalanceV2Repo,
+                observableWalletV2Repository,
                 bcProvider,
                 new OperationsConfirmationsSettings
                 {
@@ -145,38 +143,8 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 return newAddr;
             });
 
-            var backupProgressCounter = 0;
-            Console.WriteLine($"Starting {observableWallets.Count} observable wallets backup to {backupTableName} table");
-            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
-            {
-                Interlocked.Increment(ref backupProgressCounter);
-                Console.WriteLine($"Backup {observableWallet.Address} -- {backupProgressCounter} of {observableWallets.Count}");
-
-                await observableWalletBackupRepository.Insert(observableWallet);
-            });
-
-            var flushingProgress = 0;
-            Console.WriteLine("Flushing balance table");
-            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
-            {
-                Interlocked.Increment(ref flushingProgress);
-                Console.WriteLine($"Deleting wallet balance record {observableWallet.Address} -- {flushingProgress} of {observableWallets.Count}");
-
-                await walletBalanceRepo.DeleteIfExist(observableWallet.Address);
-            });
-
-            var removingProgress = 0;
-            Console.WriteLine("Clearing table ObservableWallets");
-            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
-            {
-                Interlocked.Increment(ref removingProgress);
-                Console.WriteLine($"Deleting observable wallet record -- {removingProgress} of {observableWallets.Count}");
-
-                await observableWalletRepository.Delete(observableWallet.Address);
-            });
-
             var refillingProgress = 0;
-            Console.WriteLine("Refilling table ObservableWallets");
+            Console.WriteLine("Filling table ObservableWalletsV2");
             await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
                 Interlocked.Increment(ref refillingProgress);
@@ -185,17 +153,21 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
                 Console.WriteLine($"Inserting obserwablewallet record {observableWallet.Address} => {newAddress} " +
                                   $"-- {refillingProgress} of {observableWallets.Count}");
 
-                await observableWalletRepository.Insert(ObservableWallet.Create(newAddress));
+                await observableWalletV2Repository.Insert(ObservableWallet.Create(newAddress));
             });
 
             var updatingBalanceProgress = 0;
-            Console.WriteLine("Updating wallet balanceTable");
-            await observableWallets.Select(p => obserwabletWalletsTransformation[p.Address]).ForEachAsyncSemaphore(8, async newAddr =>
+            Console.WriteLine("Filling table WalletBalancesV2");
+            await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
                 Interlocked.Increment(ref updatingBalanceProgress);
-                Console.WriteLine($"Updating balance {newAddr}-- {updatingBalanceProgress} of {observableWallets.Count}");
 
-                await walletBalanceService.UpdateBalance(newAddr);
+                var newAddress = obserwabletWalletsTransformation[observableWallet.Address];
+
+                Console.WriteLine($"Updating balance record {observableWallet.Address} => {newAddress} " +
+                                  $"-- {updatingBalanceProgress} of {observableWallets.Count}");
+
+                await walletBalanceService.UpdateBalance(newAddress);
             });
 
             Console.WriteLine("All done!");
