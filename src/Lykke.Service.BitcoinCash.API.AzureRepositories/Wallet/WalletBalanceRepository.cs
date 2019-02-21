@@ -18,12 +18,12 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
 
         public static string GeneratePartitionKey(string address)
         {
-            return address.CalculateHexHash32(3);
+            return address;
         }
 
-        public static string GenerateRowKey(string address)
+        public static string GenerateRowKey()
         {
-            return address;
+            return "_";
         }
 
         public static WalletBalanceEntity Create(IWalletBalance source)
@@ -32,7 +32,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
             {
                 Address = source.Address,
                 BalanceSatoshi = source.BalanceSatoshi,
-                RowKey = GenerateRowKey(source.Address),
+                RowKey = GenerateRowKey(),
                 PartitionKey = GeneratePartitionKey(source.Address),
                 Updated = source.Updated,
                 UpdatedAtBlockHeight = source.UpdatedAtBlockHeight
@@ -57,7 +57,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
         public Task DeleteIfExist(string address)
         {
             return _storage.DeleteIfExistAsync(WalletBalanceEntity.GeneratePartitionKey(address),
-                WalletBalanceEntity.GenerateRowKey(address));
+                WalletBalanceEntity.GenerateRowKey());
         }
 
         public async Task<IPaginationResult<IWalletBalance>> GetBalances(int take, string continuation)

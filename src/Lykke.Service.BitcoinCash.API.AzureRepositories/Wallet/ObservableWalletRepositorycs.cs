@@ -15,12 +15,12 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
 
         public static string GeneratePartitionKey(string address)
         {
-            return address.CalculateHexHash32(3);
+            return address;
         }
 
-        public static string GenerateRowKey(string address)
+        public static string GenerateRowKey()
         {
-            return address;
+            return "_";
         }
 
         public static ObservableWalletEntity Create(IObservableWallet source)
@@ -29,7 +29,7 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
             {
                 Address = source.Address,
                 PartitionKey = GeneratePartitionKey(source.Address),
-                RowKey = GenerateRowKey(source.Address)
+                RowKey = GenerateRowKey()
             };
         }
     }
@@ -63,13 +63,13 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Wallet
 
         public async Task Delete(string address)
         {
-            if (!await _storage.DeleteIfExistAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey(address)))
+            if (!await _storage.DeleteIfExistAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey()))
                 throw new BusinessException($"Wallet {address} not exist", ErrorCode.EntityNotExist);
         }
 
         public async Task<IObservableWallet> Get(string address)
         {
-            return await _storage.GetDataAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey(address));
+            return await _storage.GetDataAsync(ObservableWalletEntity.GeneratePartitionKey(address), ObservableWalletEntity.GenerateRowKey());
         }
     }
 }
