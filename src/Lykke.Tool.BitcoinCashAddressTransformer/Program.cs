@@ -147,11 +147,11 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
             Console.WriteLine("Filling table ObservableWalletsV2");
             await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                Interlocked.Increment(ref refillingProgress);
+                var progress = Interlocked.Increment(ref refillingProgress);
                 var newAddress = obserwabletWalletsTransformation[observableWallet.Address];
 
                 Console.WriteLine($"Inserting obserwablewallet record {observableWallet.Address} => {newAddress} " +
-                                  $"-- {refillingProgress} of {observableWallets.Count}");
+                                  $"-- {progress} of {observableWallets.Count}");
 
                 await observableWalletV2Repository.Insert(ObservableWallet.Create(newAddress));
             });
@@ -160,12 +160,12 @@ namespace Lykke.Tool.BitcoinCashAddressTransformer
             Console.WriteLine("Filling table WalletBalancesV2");
             await observableWallets.ForEachAsyncSemaphore(8, async observableWallet =>
             {
-                Interlocked.Increment(ref updatingBalanceProgress);
+                var progress = Interlocked.Increment(ref updatingBalanceProgress);
 
                 var newAddress = obserwabletWalletsTransformation[observableWallet.Address];
 
                 Console.WriteLine($"Updating balance record {observableWallet.Address} => {newAddress} " +
-                                  $"-- {updatingBalanceProgress} of {observableWallets.Count}");
+                                  $"-- {progress} of {observableWallets.Count}");
 
                 await walletBalanceService.UpdateBalance(newAddress);
             });
