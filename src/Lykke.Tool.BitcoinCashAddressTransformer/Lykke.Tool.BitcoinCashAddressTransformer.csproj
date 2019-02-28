@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <Version>1.0.1</Version>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Lykke.Logs" Version="5.2.0" />
+    <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
+    <PackageReference Include="NBitcoin" Version="4.1.1.44" />
+    <PackageReference Include="NBitcoin.Altcoins" Version="1.0.1.12" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lykke.Service.BitcoinCash.API.AzureRepositories\Lykke.Service.BitcoinCash.API.AzureRepositories.csproj" />
+    <ProjectReference Include="..\Lykke.Service.BitcoinCash.API.Core\Lykke.Service.BitcoinCash.API.Core.csproj" />
+    <ProjectReference Include="..\Lykke.Service.BitcoinCash.API.Services\Lykke.Service.BitcoinCash.API.Services.csproj" />
+  </ItemGroup>
+
+</Project>

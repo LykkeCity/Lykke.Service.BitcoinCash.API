@@ -62,12 +62,12 @@ namespace Lykke.Service.BitcoinCash.API.AzureRepositories.Binder
 
             builder.RegisterInstance(new ObservableWalletRepository(
                 AzureTableStorage<ObservableWalletEntity>.Create(_settings.Nested(p => p.Db.DataConnString),
-                    "ObservableWallets", _log)))
+                    "ObservableWalletsV2", _log)))
                 .As<IObservableWalletRepository>();
 
             builder.RegisterInstance(new WalletBalanceRepository(
                     AzureTableStorage<WalletBalanceEntity>.Create(_settings.Nested(p => p.Db.DataConnString),
-                        "WalletBalances", _log)))
+                        "WalletBalancesV2", _log)))
                 .As<IWalletBalanceRepository>();
 
             builder.RegisterInstance(new SpentOutputRepository(
