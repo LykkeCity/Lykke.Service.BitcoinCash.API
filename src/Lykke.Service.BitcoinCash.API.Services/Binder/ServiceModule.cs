@@ -66,12 +66,14 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private Network GetBCashNetwork()
         {
-            if (Network.GetNetwork(_settings.CurrentValue.Network) == Network.Main)
+            var btcNetwork = Network.GetNetwork(_settings.CurrentValue.Network);
+            
+            if (_settings.CurrentValue.UseBtcNetworkOnly)
             {
-                return BCash.Instance.Mainnet;
+                return btcNetwork;
             }
 
-            return BCash.Instance.Regtest;
+            return btcNetwork == Network.Main ? BCash.Instance.Mainnet : BCash.Instance.Regtest;
         }
 
         private void RegisterFeeServices(ContainerBuilder builder)
