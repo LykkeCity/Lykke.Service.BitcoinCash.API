@@ -6,6 +6,8 @@ namespace Lykke.Service.BitcoinCash.API.Core.BlockChainReaders
 {
     public interface IBlockChainProvider
     {
+        Network Network { get; }
+
         Task BroadCastTransaction(Transaction tx);
         Task<int> GetTxConfirmationCount(string txHash);
         Task ImportWatchOnlyAddress(string address);
