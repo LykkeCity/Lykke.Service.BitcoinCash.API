@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Lykke.Common.Api.Contract.Responses;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.Asset;
+using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
 using Lykke.Service.BitcoinCash.API.Core.Broadcast;
 using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using Lykke.Service.BitcoinCash.API.Core.ObservableOperation;
@@ -21,6 +22,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
     public class OperationsController : Controller
     {
         private readonly IOperationService _operationService;
+        private readonly IBlockChainProvider _blockChainProvider;
         private readonly IAddressValidator _addressValidator;
         private readonly IBroadcastService _broadcastService;
         private readonly IObservableOperationService _observableOperationService;
@@ -30,6 +32,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
 
 
         public OperationsController(IOperationService operationService,
+            IBlockChainProvider blockChainProvider,
             IAddressValidator addressValidator,
             IBroadcastService broadcastService,
             IObservableOperationService observableOperationService, 
@@ -38,6 +41,7 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
             IOperationEventRepository operationEventRepository)
         {
             _operationService = operationService;
+            _blockChainProvider = blockChainProvider;
             _addressValidator = addressValidator;
             _broadcastService = broadcastService;
             _observableOperationService = observableOperationService;
@@ -69,14 +73,14 @@ namespace Lykke.Service.BitcoinCash.API.Controllers
                 throw new BusinessException("Invalid assetId", ErrorCode.BadInputParameter);
             }
 
-            var toBitcoinAddress = _addressValidator.GetBitcoinAddress(request.ToAddress);
+            var toBitcoinAddress = _addressValidator.GetBitcoinAddress(request.ToAddress, _blockChainProvider.Network);
             if (toBitcoinAddress == null)
             {
 
                 throw new BusinessException("Invalid ToAddress ", ErrorCode.BadInputParameter);
             }
 
-            var fromBitcoinAddress = _addressValidator.GetBitcoinAddress(request.FromAddress);
+            var fromBitcoinAddress = _addressValidator.GetBitcoinAddress(request.FromAddress, _blockChainProvider.Network);
             if (fromBitcoinAddress == null)
             {
 
