@@ -24,5 +24,8 @@ namespace Lykke.Service.BitcoinCash.API.Core.Settings.ServiceSettings
         public RpcClientSettings Rpc { get; set; }
 		
         public string AssetId { get; set; }
+
+        [Optional]
+        public bool UseBtcNetworkOnly { get; set; } = false;
     }
 }
