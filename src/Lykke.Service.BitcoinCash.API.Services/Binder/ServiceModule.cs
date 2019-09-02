@@ -68,11 +68,6 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
         {
             var btcNetwork = Network.GetNetwork(_settings.CurrentValue.Network);
             
-            if (_settings.CurrentValue.UseBtcNetworkOnly)
-            {
-                return btcNetwork;
-            }
-
             return btcNetwork == Network.Main ? BCash.Instance.Mainnet : BCash.Instance.Regtest;
         }
 
@@ -97,11 +92,17 @@ namespace Lykke.Service.BitcoinCash.API.Services.Binder
 
         private void RegisterInsightApiBlockChainReaders(ContainerBuilder builder)
         {
-            builder.RegisterType<RpcBlockchainProvider>().As<IBlockChainProvider>()
-                .WithParameter(TypedParameter.From(new RPCClient(
-                    new NetworkCredential(_settings.CurrentValue.Rpc.UserName, _settings.CurrentValue.Rpc.Password),
-                    new Uri(_settings.CurrentValue.Rpc.Host),
-                    GetBCashNetwork())));
+            var network = _settings.CurrentValue.UseBtcNetworkOnly
+                ? Network.GetNetwork(_settings.CurrentValue.Network)
+                : GetBCashNetwork();
+            var rpcClient = new RPCClient(
+                new NetworkCredential(_settings.CurrentValue.Rpc.UserName, _settings.CurrentValue.Rpc.Password),
+                new Uri(_settings.CurrentValue.Rpc.Host),
+                network);
+
+            builder.RegisterType<RpcBlockchainProvider>()
+                .As<IBlockChainProvider>()
+                .WithParameter(TypedParameter.From(rpcClient));
         }
 
 
