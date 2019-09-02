@@ -27,7 +27,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
         }
 
 
-        private BitcoinAddress GetBitcoinAddress(string address, Network network)
+        private static BitcoinAddress ParseAddress(string address, Network network)
         {
             try
             {
@@ -46,24 +46,28 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
             }
         }
 
+        public BitcoinAddress GetBitcoinAddress(string address, Network forNetwork)
+        {
+            return GetBitcoinAddress(address)?.ScriptPubKey.GetDestinationAddress(forNetwork);
+        }
 
         public BitcoinAddress GetBitcoinAddress(string address)
         {
 
             //eg moc231tgxApbRSwLNrc9ZbSVDktTRo3acK
-            var legacyAddress = GetBitcoinAddress(address, _network);
+            var legacyAddress = ParseAddress(address, _network);
             if (legacyAddress != null)
                 return legacyAddress;
 
             //eg: bitcoincash:qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
-            var canonicalAddress = GetBitcoinAddress(address, _bcashNetwork);
+            var canonicalAddress = ParseAddress(address, _bcashNetwork);
 
             if (canonicalAddress != null)
                 return canonicalAddress;
 
             //eg qpm2qsznhks23z7629mms6s4cwef74vcwvy22gdx6a
             var addressWithoutPrefix =
-                GetBitcoinAddress($"{GetAddressPrefix(_bcashNetwork)}:{address?.Trim()}", _bcashNetwork);
+                ParseAddress($"{GetAddressPrefix(_bcashNetwork)}:{address?.Trim()}", _bcashNetwork);
 
             return addressWithoutPrefix;
         }
@@ -93,7 +97,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
                 return "bchtest";
             }
 
-            throw new ArgumentException("Unknown bcash network", nameof(bcashNetwork));
+            throw new ArgumentException("Unknown bcash forNetwork", nameof(bcashNetwork));
         }
     }
 }
