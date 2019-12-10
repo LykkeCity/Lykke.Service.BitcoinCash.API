@@ -137,7 +137,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
             
             var observableWalletRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
-                "ObservableWallets", logFactory));
+                "ObservableWalletsV2", logFactory));
             
             Console.WriteLine("Retrieving observable wallets");
 
