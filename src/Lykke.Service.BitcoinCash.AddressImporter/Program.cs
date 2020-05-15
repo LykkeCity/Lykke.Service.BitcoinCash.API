@@ -196,7 +196,7 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                                 if (response.StatusCode != HttpStatusCode.OK)
                                 {
                                     Console.WriteLine($"Failed to execute RPC call. Response: {response.StatusCode}");
-                                    throw new InvalidOperationException($"Failed to execute RPC call. Response: {response.StatusCode}, {response.Content.ReadAsStringAsync()}");
+                                    throw new InvalidOperationException($"Failed to execute RPC call. Response: {response.StatusCode}, {await response.Content.ReadAsStringAsync()}");
                                 }
                             }
                         }
