@@ -177,7 +177,10 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                             ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(address),
                             Timestamp = new DateTimeOffset(timeStampTyped),
                         }),
-                        true
+                        new
+                        {
+                            rescan = true
+                        }
                     }
                 };
 
