@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using AzureStorage.Tables;
 using Lykke.Logs;
@@ -15,6 +18,8 @@ using MoreLinq;
 using NBitcoin;
 using NBitcoin.Altcoins;
 using NBitcoin.RPC;
+using Newtonsoft.Json;
+using Polly;
 
 namespace Lykke.Service.BitcoinCash.AddressImporter
 {
@@ -115,12 +120,9 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
 
             var settings = new SettingsServiceReloadingManager<AppSettings>(settingsUrl).Nested(x => x.BitcoinCashApi);
             
-            BCash.Instance.EnsureRegistered();
             var network = Network.GetNetwork(settings.CurrentValue.Network);
             var bcashNetwork = network == Network.Main ? BCash.Instance.Mainnet : BCash.Instance.Regtest;
-            
             var addressValidator = new AddressValidator(network, bcashNetwork);
-
             var hotwalletTyped = addressValidator.GetBitcoinAddress(hotwallet);
 
             if (hotwalletTyped == null)
@@ -130,10 +132,17 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                 return;
             }
 
-            var rpcClient = new RPCClient(
-                new NetworkCredential(settings.CurrentValue.Rpc.UserName, settings.CurrentValue.Rpc.Password),
-                new Uri(settings.CurrentValue.Rpc.Host),
-                bcashNetwork);
+            var authTokenBytes = Encoding.ASCII.GetBytes($"{settings.CurrentValue.Rpc.UserName}:{settings.CurrentValue.Rpc.Password}");
+            var authToken = Convert.ToBase64String(authTokenBytes);
+            var httpClient = new HttpClient
+            {
+                BaseAddress = new Uri(settings.CurrentValue.Rpc.Host),
+                Timeout = TimeSpan.FromMinutes(30),
+                DefaultRequestHeaders =
+                {
+                    Authorization = new AuthenticationHeaderValue("Basic", authToken)
+                }
+            };
             
             var observableWalletRepository = new ObservableWalletRepository(AzureTableStorage<ObservableWalletEntity>.Create(
                 settings.Nested(p => p.Db.DataConnString),
@@ -148,19 +157,50 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                 .Concat(new[] {hotwalletTyped})
                 .ToList();
 
-            Console.WriteLine($"Importing {walletsToImport.Count} addresses in node started at {DateTime.UtcNow}. Timestamp {timeStampTyped}");
+            Console.WriteLine($"Importing {walletsToImport.Count} addresses in node started at {DateTime.UtcNow}. Timestamp {timeStampTyped}. Batch size {batchSize}");
 
-            int batchNum = 1;
+            var batchNum = 1;
 
             foreach (var batch in walletsToImport.Batch(batchSizeTyped))
             {
                 Console.WriteLine($"{DateTime.UtcNow} Importing batch {batchNum++}...");
-
-                await rpcClient.ImportMultiAsync(batch.Select(addr => new ImportMultiAddress
+                
+                var payload = new
                 {
-                    ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(addr),
-                    Timestamp = new DateTimeOffset(timeStampTyped)
-                }).ToArray(), rescan: true);
+                    jsonrpc = "1.0",
+                    id = Guid.NewGuid().ToString(),
+                    method = "importmulti",
+                    @params = new object[]
+                    {
+                        batch.Select(address => new ImportMultiAddress
+                        {
+                            ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(address),
+                            Timestamp = new DateTimeOffset(timeStampTyped),
+                        }),
+                        true
+                    }
+                };
+
+                await Policy
+                    .Handle<Exception>()
+                    .RetryAsync(5, (e, i) =>
+                    {
+                        Console.WriteLine($"Retrying ({i})...");
+                    })
+                    .ExecuteAsync(async () =>
+                    {
+                        using (var content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json"))
+                        {
+                            using (var response = await httpClient.PostAsync("", content))
+                            {
+                                if (response.StatusCode != HttpStatusCode.OK)
+                                {
+                                    Console.WriteLine($"Failed to execute RPC call. Response: {response.StatusCode}");
+                                    throw new InvalidOperationException($"Failed to execute RPC call. Response: {response.StatusCode}, {response.Content.ReadAsStringAsync()}");
+                                }
+                            }
+                        }
+                    });
 
                 Console.WriteLine($"{DateTime.UtcNow} Batch imported");
             }
