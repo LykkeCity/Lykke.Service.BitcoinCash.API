@@ -172,10 +172,10 @@ namespace Lykke.Service.BitcoinCash.AddressImporter
                     method = "importmulti",
                     @params = new object[]
                     {
-                        batch.Select(address => new ImportMultiAddress
+                        batch.Select(address => new
                         {
-                            ScriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(address),
-                            Timestamp = new DateTimeOffset(timeStampTyped),
+                            scriptPubKey = new ImportMultiAddress.ScriptPubKeyObject(address),
+                            timestamp = Utils.DateTimeToUnixTime(new DateTimeOffset(timeStampTyped))
                         }),
                         new
                         {
