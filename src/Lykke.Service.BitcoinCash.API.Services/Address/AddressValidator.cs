@@ -11,6 +11,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
     {
         private readonly Network _network;
         private readonly Network _bcashNetwork;
+        private readonly string _bc1 = "bc1";
 
         public AddressValidator(Network network, [KeyFilter(Constants.BCashFilter)] Network bcashNetwork)
         {
@@ -53,9 +54,11 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
 
         public BitcoinAddress GetBitcoinAddress(string address)
         {
-
+            if (address.StartsWith(_bc1, StringComparison.InvariantCultureIgnoreCase))
+                return null;
             //eg moc231tgxApbRSwLNrc9ZbSVDktTRo3acK
             var legacyAddress = ParseAddress(address, _network);
+
             if (legacyAddress != null)
                 return legacyAddress;
 
