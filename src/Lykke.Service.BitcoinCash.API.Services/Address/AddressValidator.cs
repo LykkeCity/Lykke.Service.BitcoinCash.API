@@ -54,7 +54,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.Address
 
         public BitcoinAddress GetBitcoinAddress(string address)
         {
-            if (address.StartsWith(_bc1))
+            if (address.StartsWith(_bc1, StringComparison.InvariantCultureIgnoreCase))
                 return null;
             //eg moc231tgxApbRSwLNrc9ZbSVDktTRo3acK
             var legacyAddress = ParseAddress(address, _network);
