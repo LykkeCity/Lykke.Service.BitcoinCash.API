@@ -6,6 +6,7 @@ using AsyncFriendlyStackTrace;
 using Common.Log;
 using Lykke.Service.BitcoinCash.API.Core.Address;
 using Lykke.Service.BitcoinCash.API.Core.BlockChainReaders;
+using Lykke.Service.BitcoinCash.API.Core.Domain.Health.Exceptions;
 using NBitcoin;
 using NBitcoin.RPC;
 
@@ -26,9 +27,16 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
 
         public Network Network => _client.Network;
 
-        public Task BroadCastTransaction(Transaction tx)
+        public async Task BroadCastTransaction(Transaction tx)
         {
-            return _client.SendRawTransactionAsync(tx);
+            try
+            {
+                await _client.SendRawTransactionAsync(tx);
+            }
+            catch (RPCException ex) when (ex.RPCCode == RPCErrorCode.RPC_VERIFY_REJECTED && ex.Message == "257: txn-already-known")
+            {
+                throw new BusinessException("Transaction already brodcasted", ErrorCode.TransactionAlreadyBroadcasted);
+            }
         }
 
         public async Task<int> GetTxConfirmationCount(string txHash)
@@ -63,7 +71,7 @@ namespace Lykke.Service.BitcoinCash.API.Services.BlockChainProviders.InsightApi
         public async Task<IList<Coin>> GetUnspentOutputs(string address, int minConfirmationCount)
         {
             var btcAddr = _addressValidator.GetBitcoinAddress(address, _client.Network);
-            
+
             if (btcAddr == null)
             {
                 throw new ArgumentException("Unable to recognize address", nameof(address));
